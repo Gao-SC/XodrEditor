@@ -16,32 +16,45 @@ def open(str):
     jSets = [[-1, -1] for _ in range(1000)]
     for road in vars.root.iter('road'):
         id = int(road.get('id'))
-        link = road.get('link')
-        pre = link.get('predecessor')
-        suc = link.get('successor')
+        link = road.find('link')
+        pre = link.find('predecessor')
+        suc = link.find('successor')
         if pre != None:
             direction = pre.get("contactPoint") == "end"
             preId = int(pre.get("elementId"))
             if pre.get("elementType") == "road":
-                vars.connectSets[id].append([preId, cons.TAIL, direction])
+                if [preId, bool(cons.TAIL), direction] not in vars.connectSets[id]:
+                    vars.connectSets[id].append([preId, bool(cons.TAIL), direction])
+                if [id, direction, bool(cons.TAIL)] not in vars.connectSets[preId]:
+                    vars.connectSets[preId].append([id, direction, bool(cons.TAIL)])
             else:
                 jSets[id][0] = int(pre.get("elementId"))
         if suc != None:
-            direction = pre.get("contactPoint") == "end"
+            direction = suc.get("contactPoint") == "end"
             sucId = int(suc.get("elementId"))
             if suc.get("elementType") == "road":
-                vars.connectSets[id].append([sucId, cons.TAIL, direction])
+                if [sucId, bool(cons.HEAD), direction] not in vars.connectSets[id]:
+                    vars.connectSets[id].append([sucId, bool(cons.HEAD), direction])
+                if [id, direction, bool(cons.HEAD)] not in vars.connectSets[sucId]:
+                    vars.connectSets[sucId].append([id, direction, bool(cons.HEAD)])
             else:
                 jSets[id][1] = int(suc.get("elementId"))
         
     for junction in vars.root.iter('junction'):
         jId = int(junction.get('id'))
         for connection in junction.iter('connection'):
-            direction = pre.get("contactPoint") == "end"
+            direction = connection.get("contactPoint") == "end"
             incId = int(connection.get('incomingRoad'  ))
             conId = int(connection.get('connectingRoad'))
             point = jSets[incId][1] == jId
-            vars.connectSets[incId].append([conId, point, direction])
+            if [conId, point, direction] not in vars.connectSets[incId]:
+                vars.connectSets[incId].append([conId, point, direction])
+    
+    for i in range(len(vars.connectSets)):
+        _ = vars.connectSets[i]
+        if _ != []:
+            print(i)
+            print(_)
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
@@ -81,6 +94,8 @@ if __name__ == '__main__':
                         changeRoadSlope(command[1], float(command[2]), command[3])
                     elif len(command) == 5:
                         changeRoadSlope(command[1], float(command[2]), command[3], int(command[4]))
+                    elif len(command) == 6:
+                        changeRoadSlope(command[1], float(command[2]), command[3], int(command[4]), int(command[5]))
                     else:
                         print("Too much params!")
                         

@@ -13,8 +13,8 @@ class cons:
     MOVE_TAIL = 1
     MOVE_HEAD = 2
 
-    TAIL = 0
-    HEAD = 1
+    TAIL = False
+    HEAD = True
 
 get = lambda a, b :float(a.get(b))
 set = lambda a, b, c :a.set(b, str(c))

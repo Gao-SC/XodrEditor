@@ -1,5 +1,6 @@
 import numpy
 import variables as vars
+from collections import deque
 from constants import *
 
 def changeRoadSlope(id, value, mode = 'add', move = cons.MOVE_BOTH, maxLayer = 0, new = True):
@@ -16,12 +17,17 @@ def changeRoadSlope(id, value, mode = 'add', move = cons.MOVE_BOTH, maxLayer = 0
       length = get(road, 'length')
 
       if mode == 'add':
-        if move != cons.MOVE_BOTH:
+        if move == cons.MOVE_TAIL:
+          slope = value/length*-1
+        elif move == cons.MOVE_HEAD:
           slope = value/length
         else:
           slope = 0
       elif mode == 'mul':
-        eleva = value*length
+        if move == cons.MOVE_TAIL:
+          eleva = value*length*-1
+        elif move == cons.MOVE_HEAD:
+          eleva = value*length
         
       for i in range(size):
         g = geometries[i]
@@ -30,19 +36,19 @@ def changeRoadSlope(id, value, mode = 'add', move = cons.MOVE_BOTH, maxLayer = 0
 
         if mode == 'add':
           set(e, 'b', get(e, 'b')+slope)
-          if move == 0:
+          if move == cons.MOVE_BOTH:
             set(e, 'a', get(e, 'a')+eleva)
-          elif move == -1:
+          elif move == cons.MOVE_TAIL:
+            set(e, 'a', get(e, 'a')+slope*(s-length))
+          elif move == cons.MOVE_HEAD:
             set(e, 'a', get(e, 'a')+slope*s)
-          elif move == 1:
-            set(e, 'a', get(e, 'a')+slope*(length-s))
           
         elif mode == 'mul':
           set(e, 'b', get(e, 'b')+slope)
-          if move == -1:
-            set(e, 'a', get(e, 'a')+slope*s)
-          elif move == 1:
+          if move == cons.MOVE_TAIL:
             set(e, 'a', get(e, 'a')+slope*(s-length))
+          elif move == cons.MOVE_HEAD:
+            set(e, 'a', get(e, 'a')+slope*s)
 
       if not new:
         return
@@ -53,23 +59,26 @@ def changeRoadSlope(id, value, mode = 'add', move = cons.MOVE_BOTH, maxLayer = 0
       pre = link.find('predecessor')
       suc = link.find('successor')
       if move == cons.MOVE_HEAD and pre != None: 
-        lockChange(cons.TAIL, id)
+        lockChange(cons.TAIL, int(id))
       if move == cons.MOVE_TAIL and suc != None: 
-        lockChange(cons.HEAD, id)
+        lockChange(cons.HEAD, int(id))
 
       if move != cons.MOVE_HEAD and pre != None:
-        setChange(cons.TAIL, id, 0, maxLayer)
+        setChange(cons.TAIL, int(id), maxLayer)
       if move != cons.MOVE_TAIL and suc != None:
-        setChange(cons.HEAD, id, 0, maxLayer)
+        setChange(cons.HEAD, int(id), maxLayer)
 
       for r in vars.root.iter('road'):
         newId = r.get('id')
         num = vars.edits[int(newId)]
         if num == cons.TAIL_EDITED or num == cons.TAIL_EDITED2:   # change tail
+          print("move tail" + newId)
           changeRoadSlope(newId, eleva, 'add', cons.MOVE_TAIL, new=False)
         elif num == cons.HEAD_EDITED or num == cons.HEAD_EDITED2: # change head
+          print("move head" + newId)
           changeRoadSlope(newId, eleva, 'add', cons.MOVE_HEAD, new=False)
         elif num == cons.BOTH_EDITED:                             # change both
+          print("move both" + newId)
           changeRoadSlope(newId, eleva, 'add', cons.MOVE_BOTH, new=False)
 
       return
@@ -83,55 +92,77 @@ def lockChange(direction, id):
       else:
         vars.edits[info[0]] = cons.TAIL_LOCKED
 
-def setChange(direction, id, layer, maxLayer):
-  if layer > maxLayer:
-    return
+def setChange(di, id, maxLayer):
+  queue = deque()
+  layer = 0
 
   for info in vars.connectSets[id]:
-    if info[1] == direction:
-      nextId = info[0]
-      if layer < maxLayer:
-        match vars.edits[nextId]:
-          case cons.NOT_EDITED:
-            vars.edits[nextId] = cons.BOTH_EDITED
-            for road in vars.root.iter('road'):
-              if road.get('id') == nextId:
-                link = road.find('link')
-                pre = link.find('predecessor')
-                suc = link.find('successor')
-                if pre != None and not info[2]: 
-                  setChange(pre, layer+1, maxLayer)
-                if suc != None and info[2]: 
-                  setChange(suc, layer+1, maxLayer)
-                break
-          case cons.TAIL_LOCKED:
-            vars.edits[nextId] = cons.HEAD_EDITED2
-          case cons.HEAD_LOCKED:
-            vars.edits[nextId] = cons.TAIL_EDITED2
-          case cons.TAIL_EDITED:
-            vars.edits[nextId] = cons.BOTH_EDITED
-          case cons.HEAD_EDITED:
-            vars.edits[nextId] = cons.BOTH_EDITED
-          case _:
-            return
-      
-      elif layer == maxLayer and not info[2]:
-        match vars.edits[nextId]:
-          case cons.NOT_EDITED:
-            vars.edits[nextId] = cons.TAIL_EDITED
-          case cons.HEAD_LOCKED:
-            vars.edits[nextId] = cons.TAIL_EDITED2
-          case cons.HEAD_EDITED:
-            vars.edits[nextId] = cons.BOTH_EDITED
-      elif layer == maxLayer and info[2]:
-        match vars.edits[nextId]:
-          case cons.NOT_EDITED:
-            vars.edits[nextId] = cons.HEAD_EDITED
-          case cons.TAIL_LOCKED:
-            vars.edits[nextId] = cons.HEAD_EDITED2
-          case cons.TAIL_EDITED:
-            vars.edits[nextId] = cons.BOTH_EDITED
+    if info[1] == di:
+      queue.append({"id": info[0], "di": info[2], "layer": 0})
 
+  while len(queue) > 0:
+    item = queue.popleft()
+    id = item['id']
+    di = item['di']
+    layer = item['layer']
+
+    iuf = id == 6
+    
+    if layer < maxLayer:
+      match vars.edits[id]:
+        case cons.NOT_EDITED:
+          vars.edits[id] = cons.BOTH_EDITED
+          for info in vars.connectSets[id]:
+            if iuf:
+              print({"id": info[0], "di": info[2], "layer": layer+1})
+            queue.append({"id": info[0], "di": info[2], "layer": layer+1})
+
+        case cons.TAIL_LOCKED:
+          vars.edits[id] = cons.HEAD_EDITED2
+          for info in vars.connectSets[id]:
+            if info[1] == cons.HEAD:
+              queue.append({"id": info[0], "di": info[2], "layer": layer+1})
+
+        case cons.HEAD_LOCKED:
+          vars.edits[id] = cons.TAIL_EDITED2
+          for info in vars.connectSets[id]:
+            if info[1] == cons.TAIL:
+              queue.append({"id": info[0], "di": info[2], "layer": layer+1})
+
+        case cons.TAIL_EDITED:
+          vars.edits[id] = cons.BOTH_EDITED
+          for info in vars.connectSets[id]:
+            queue.append({"id": info[0], "di": info[2], "layer": layer+1})
+        case cons.HEAD_EDITED:
+          vars.edits[id] = cons.BOTH_EDITED
+          for info in vars.connectSets[id]:
+            queue.append({"id": info[0], "di": info[2], "layer": layer+1})
+        case _:
+          continue
+    
+    elif layer == maxLayer and not di:
+      match vars.edits[id]:
+        case cons.NOT_EDITED:
+          vars.edits[id] = cons.TAIL_EDITED
+
+        case cons.HEAD_LOCKED:
+          vars.edits[id] = cons.TAIL_EDITED2
+        case cons.HEAD_EDITED:
+          vars.edits[id] = cons.BOTH_EDITED
+      for info in vars.connectSets[id]:
+        if info[1] == cons.TAIL:
+          queue.append({"id": info[0], "di": info[2], "layer": layer+1})
+    elif layer == maxLayer and di:
+      match vars.edits[id]:
+        case cons.NOT_EDITED:
+          vars.edits[id] = cons.HEAD_EDITED
+        case cons.TAIL_LOCKED:
+          vars.edits[id] = cons.HEAD_EDITED2
+        case cons.TAIL_EDITED:
+          vars.edits[id] = cons.BOTH_EDITED
+      for info in vars.connectSets[id]:
+        if info[1] == cons.HEAD:
+          queue.append({"id": info[0], "di": info[2], "layer": layer})
 
 
 '''def adjustElevation(id, start, h, layer, maxLayer):
