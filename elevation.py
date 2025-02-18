@@ -144,14 +144,15 @@ def setChange(di, id, maxLayer):
       match vars.edits[id]:
         case cons.NOT_EDITED:
           vars.edits[id] = cons.TAIL_EDITED
-
         case cons.HEAD_LOCKED:
           vars.edits[id] = cons.TAIL_EDITED2
         case cons.HEAD_EDITED:
           vars.edits[id] = cons.BOTH_EDITED
+        case _:
+          continue
       for info in vars.connectSets[id]:
         if info[1] == cons.TAIL:
-          queue.append({"id": info[0], "di": info[2], "layer": layer+1})
+          queue.append({"id": info[0], "di": info[2], "layer": layer})
     elif layer == maxLayer and di:
       match vars.edits[id]:
         case cons.NOT_EDITED:
@@ -160,6 +161,8 @@ def setChange(di, id, maxLayer):
           vars.edits[id] = cons.HEAD_EDITED2
         case cons.TAIL_EDITED:
           vars.edits[id] = cons.BOTH_EDITED
+        case _:
+          continue
       for info in vars.connectSets[id]:
         if info[1] == cons.HEAD:
           queue.append({"id": info[0], "di": info[2], "layer": layer})
