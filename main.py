@@ -50,11 +50,11 @@ def open(str):
             if [conId, point, direction] not in vars.connectSets[incId]:
                 vars.connectSets[incId].append([conId, point, direction])
     
-    for i in range(len(vars.connectSets)):
+'''    for i in range(len(vars.connectSets)):
         _ = vars.connectSets[i]
         if _ != []:
             print(i)
-            print(_)
+            print(_)'''
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
@@ -89,16 +89,27 @@ if __name__ == '__main__':
                     if len(command) <= 2:
                         print('Need more params.')
                     elif len(command) == 3:
-                        changeRoadSlope(command[1], float(command[2]))
+                        changeRoadsSlope(command[1], float(command[2]))
                     elif len(command) == 4:
-                        changeRoadSlope(command[1], float(command[2]), command[3])
+                        changeRoadsSlope(command[1], float(command[2]), command[3])
                     elif len(command) == 5:
-                        changeRoadSlope(command[1], float(command[2]), command[3], int(command[4]))
+                        changeRoadsSlope(command[1], float(command[2]), command[3], int(command[4]))
                     elif len(command) == 6:
-                        changeRoadSlope(command[1], float(command[2]), command[3], int(command[4]), int(command[5]))
+                        changeRoadsSlope(command[1], float(command[2]), command[3], int(command[4]), int(command[5]))
                     else:
                         print("Too much params!")
-                        
+
+                case "widths":
+                    if len(command) <= 2:
+                        print('Need more params.')
+                    elif len(command) == 3:
+                        changeRoadsWidth(command[1], float(command[2]))
+                    elif len(command) == 4:
+                        changeRoadsWidth(command[1], float(command[2]), command[3])
+                    elif len(command) == 5:
+                        changeRoadsWidth(command[1], float(command[2]), command[3], int(command[4]))
+                    else:
+                        print("Too much params!")
                 
     
 

@@ -3,7 +3,7 @@ import variables as vars
 from collections import deque
 from constants import *
 
-def changeRoadSlope(id, value, mode = 'add', move = cons.MOVE_BOTH, maxLayer = 0, new = True):
+def changeRoadsSlope(id, value, mode = 'add', move = cons.MOVE_BOTH, maxLayer = 0, new = True):
   if mode == 'mul' and move == cons.MOVE_BOTH:
     print('Params error!')
     return
@@ -73,13 +73,13 @@ def changeRoadSlope(id, value, mode = 'add', move = cons.MOVE_BOTH, maxLayer = 0
         num = vars.edits[int(newId)]
         if num == cons.TAIL_EDITED or num == cons.TAIL_EDITED2:   # change tail
           print("move tail" + newId)
-          changeRoadSlope(newId, eleva, 'add', cons.MOVE_TAIL, new=False)
+          changeRoadsSlope(newId, eleva, 'add', cons.MOVE_TAIL, new=False)
         elif num == cons.HEAD_EDITED or num == cons.HEAD_EDITED2: # change head
           print("move head" + newId)
-          changeRoadSlope(newId, eleva, 'add', cons.MOVE_HEAD, new=False)
+          changeRoadsSlope(newId, eleva, 'add', cons.MOVE_HEAD, new=False)
         elif num == cons.BOTH_EDITED:                             # change both
           print("move both" + newId)
-          changeRoadSlope(newId, eleva, 'add', cons.MOVE_BOTH, new=False)
+          changeRoadsSlope(newId, eleva, 'add', cons.MOVE_BOTH, new=False)
 
       return
 
@@ -105,16 +105,12 @@ def setChange(di, id, maxLayer):
     id = item['id']
     di = item['di']
     layer = item['layer']
-
-    iuf = id == 6
-    
+ 
     if layer < maxLayer:
       match vars.edits[id]:
         case cons.NOT_EDITED:
           vars.edits[id] = cons.BOTH_EDITED
           for info in vars.connectSets[id]:
-            if iuf:
-              print({"id": info[0], "di": info[2], "layer": layer+1})
             queue.append({"id": info[0], "di": info[2], "layer": layer+1})
 
         case cons.TAIL_LOCKED:
