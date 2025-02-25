@@ -1,4 +1,5 @@
 import xml.etree.ElementTree as ET
+import math
 import variables as vars
 from constants import *
 from collections import deque
@@ -77,7 +78,7 @@ def setWidth(width: ET.Element, value, mode, smooth = 0, distance = 0):
       return
     
 # change specific road width (on lanes)
-# Infos: [{"id":0, "lanes": [-1, 1, 2]}]
+# Infos: [{"id":0, "lanes": [-1, 1, 2]}]#TODO
 
 def changeRoadWidth(id, value, mode = 'add', smooth = False, infos = []):
   for road in vars.root.iter('road'):
@@ -137,7 +138,7 @@ def changeRoadWidth(id, value, mode = 'add', smooth = False, infos = []):
 
 ## 限制同向传播
 ## mul
-def changeRoadsWidth(id, value, mode = 'add', maxLayer = 0, new = True):
+def changeRoadsWidth(id, value, mode = 'add', maxStep = 0, sameHdg=0, new = True):
   for road in vars.root.iter('road'):
     if road.get('id') == id:
       length = get(road, 'length')
@@ -168,63 +169,73 @@ def changeRoadsWidth(id, value, mode = 'add', maxLayer = 0, new = True):
       link = road.find('link')
       pre = link.find('predecessor')
       suc = link.find('successor')
+      geometries = road.find('planView').findall('geometry')
+      size = len(geometries)
 
       if pre != None:
-        setChange(cons.TAIL, int(id), maxLayer)
+        hdg = get(geometries[0], 'hdg')
+        setChange(cons.TAIL, int(id), maxStep, sameHdg, hdg)
       if suc != None:
-        setChange(cons.HEAD, int(id), maxLayer)
+        hdg = get(geometries[size-1], 'hdg')
+        setChange(cons.HEAD, int(id), maxStep, sameHdg, hdg)
 
       for r in vars.root.iter('road'):
         newId = r.get('id')
         num = vars.edits[int(newId)]
         if num == cons.TAIL_EDITED:   # change tail
-          print('tail')
-          print(newId)
           changeRoadsWidth(newId, value, 'addt', new=False)
         elif num == cons.HEAD_EDITED: # change head
-          print('head')
-          print(newId)
           changeRoadsWidth(newId, value, 'addh', new=False)
         elif num == cons.BOTH_EDITED: # change both
-          print('both')
-          print(newId)
           changeRoadsWidth(newId, value, 'add', new=False)
 
       return
 
-def setChange(di, id, maxLayer):
+def setChange(di, id, maxStep, sameHdg, hdg):
   queue = deque()
-  layer = 0
+  step = 0
 
   for info in vars.connectSets[id]:
     if info[1] == di:
-      queue.append({"id": info[0], "di": info[2], "layer": 0})
+      queue.append({"id": info[0], "di": info[2], "step": 0})
 
   while len(queue) > 0:
     item = queue.popleft()
     id = item['id']
     di = item['di']
-    layer = item['layer']
+    step = item['step']
 
-    if layer < maxLayer:
+    if sameHdg:
+      for road in vars.root.iter('road'):
+        if get(road, 'id') == id:
+          planView = road.find('planView')
+          for geometry in planView.iter('geometry'):
+            newHdg = get(geometry, 'hdg')
+            angle = (newHdg-hdg)%(2*math.pi)
+            if angle > math.pi/4 and angle < math.pi/4*3 or angle > math.pi/4*5 and angle < math.pi/4*7:
+              step = maxStep
+              break
+          break
+
+    if step < maxStep:
       match vars.edits[id]:
         case cons.NOT_EDITED:
           vars.edits[id] = cons.BOTH_EDITED
           for info in vars.connectSets[id]:
-            queue.append({"id": info[0], "di": info[2], "layer": layer+1})
+            queue.append({"id": info[0], "di": info[2], "step": step+1})
 
         case cons.TAIL_EDITED:
           vars.edits[id] = cons.BOTH_EDITED
           for info in vars.connectSets[id]:
-            queue.append({"id": info[0], "di": info[2], "layer": layer+1})
+            queue.append({"id": info[0], "di": info[2], "step": step+1})
         case cons.HEAD_EDITED:
           vars.edits[id] = cons.BOTH_EDITED
           for info in vars.connectSets[id]:
-            queue.append({"id": info[0], "di": info[2], "layer": layer+1})
+            queue.append({"id": info[0], "di": info[2], "step": step+1})
         case _:
           continue
     
-    elif layer == maxLayer and not di:
+    elif step == maxStep and not di:
       match vars.edits[id]:
         case cons.NOT_EDITED:
           vars.edits[id] = cons.TAIL_EDITED
@@ -234,8 +245,8 @@ def setChange(di, id, maxLayer):
           continue
       for info in vars.connectSets[id]:
         if info[1] == cons.TAIL:
-          queue.append({"id": info[0], "di": info[2], "layer": layer})
-    elif layer == maxLayer and di:
+          queue.append({"id": info[0], "di": info[2], "step": step})
+    elif step == maxStep and di:
       match vars.edits[id]:
         case cons.NOT_EDITED:
           vars.edits[id] = cons.HEAD_EDITED
@@ -245,4 +256,4 @@ def setChange(di, id, maxLayer):
           continue
       for info in vars.connectSets[id]:
         if info[1] == cons.HEAD:
-          queue.append({"id": info[0], "di": info[2], "layer": layer})
+          queue.append({"id": info[0], "di": info[2], "step": step})

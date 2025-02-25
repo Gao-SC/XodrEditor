@@ -1,9 +1,10 @@
 import numpy
+import math
 import variables as vars
 from collections import deque
 from constants import *
 
-def changeRoadsSlope(id, value, mode = 'add', move = cons.MOVE_BOTH, maxLayer = 0, new = True):
+def changeRoadsSlope(id, value, mode, move, maxStep=0, sameHdg=0, new = True):
   if mode == 'mul' and move == cons.MOVE_BOTH:
     print('Params error!')
     return
@@ -63,10 +64,13 @@ def changeRoadsSlope(id, value, mode = 'add', move = cons.MOVE_BOTH, maxLayer = 
       if move == cons.MOVE_TAIL and suc != None: 
         lockChange(cons.HEAD, int(id))
 
+
       if move != cons.MOVE_HEAD and pre != None:
-        setChange(cons.TAIL, int(id), maxLayer)
+        hdg = get(geometries[0], 'hdg')
+        setChange(cons.TAIL, int(id), maxStep, sameHdg, hdg)
       if move != cons.MOVE_TAIL and suc != None:
-        setChange(cons.HEAD, int(id), maxLayer)
+        hdg = get(geometries[size-1], 'hdg')
+        setChange(cons.HEAD, int(id), maxStep, sameHdg, hdg)
 
       for r in vars.root.iter('road'):
         newId = r.get('id')
@@ -92,51 +96,62 @@ def lockChange(direction, id):
       else:
         vars.edits[info[0]] = cons.TAIL_LOCKED
 
-def setChange(di, id, maxLayer):
+def setChange(di, id, maxStep, sameHdg, hdg):
   queue = deque()
-  layer = 0
 
   for info in vars.connectSets[id]:
     if info[1] == di:
-      queue.append({"id": info[0], "di": info[2], "layer": 0})
+      queue.append({"id": info[0], "di": info[2], "step": 0})
 
   while len(queue) > 0:
     item = queue.popleft()
     id = item['id']
     di = item['di']
-    layer = item['layer']
- 
-    if layer < maxLayer:
+    step = item['step']
+
+    if sameHdg:
+      for road in vars.root.iter('road'):
+        if get(road, 'id') == id:
+          planView = road.find('planView')
+          for geometry in planView.iter('geometry'):
+            newHdg = get(geometry, 'hdg')
+            angle = (newHdg-hdg)%(2*math.pi)
+            if angle > math.pi/4 and angle < math.pi/4*3 or angle > math.pi/4*5 and angle < math.pi/4*7:
+              step = maxStep
+              break
+          break
+  
+    if step < maxStep:
       match vars.edits[id]:
         case cons.NOT_EDITED:
           vars.edits[id] = cons.BOTH_EDITED
           for info in vars.connectSets[id]:
-            queue.append({"id": info[0], "di": info[2], "layer": layer+1})
+            queue.append({"id": info[0], "di": info[2], "step": step+1})
 
         case cons.TAIL_LOCKED:
           vars.edits[id] = cons.HEAD_EDITED2
           for info in vars.connectSets[id]:
             if info[1] == cons.HEAD:
-              queue.append({"id": info[0], "di": info[2], "layer": layer+1})
+              queue.append({"id": info[0], "di": info[2], "step": step+1})
 
         case cons.HEAD_LOCKED:
           vars.edits[id] = cons.TAIL_EDITED2
           for info in vars.connectSets[id]:
             if info[1] == cons.TAIL:
-              queue.append({"id": info[0], "di": info[2], "layer": layer+1})
+              queue.append({"id": info[0], "di": info[2], "step": step+1})
 
         case cons.TAIL_EDITED:
           vars.edits[id] = cons.BOTH_EDITED
           for info in vars.connectSets[id]:
-            queue.append({"id": info[0], "di": info[2], "layer": layer+1})
+            queue.append({"id": info[0], "di": info[2], "step": step+1})
         case cons.HEAD_EDITED:
           vars.edits[id] = cons.BOTH_EDITED
           for info in vars.connectSets[id]:
-            queue.append({"id": info[0], "di": info[2], "layer": layer+1})
+            queue.append({"id": info[0], "di": info[2], "step": step+1})
         case _:
           continue
     
-    elif layer == maxLayer and not di:
+    elif step == maxStep and di == cons.TAIL:
       match vars.edits[id]:
         case cons.NOT_EDITED:
           vars.edits[id] = cons.TAIL_EDITED
@@ -148,8 +163,8 @@ def setChange(di, id, maxLayer):
           continue
       for info in vars.connectSets[id]:
         if info[1] == cons.TAIL:
-          queue.append({"id": info[0], "di": info[2], "layer": layer})
-    elif layer == maxLayer and di:
+          queue.append({"id": info[0], "di": info[2], "step": step})
+    elif step == maxStep and di == cons.HEAD:
       match vars.edits[id]:
         case cons.NOT_EDITED:
           vars.edits[id] = cons.HEAD_EDITED
@@ -161,7 +176,7 @@ def setChange(di, id, maxLayer):
           continue
       for info in vars.connectSets[id]:
         if info[1] == cons.HEAD:
-          queue.append({"id": info[0], "di": info[2], "layer": layer})
+          queue.append({"id": info[0], "di": info[2], "step": step})
 
 
 '''def adjustElevation(id, start, h, layer, maxLayer):

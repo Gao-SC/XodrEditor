@@ -72,46 +72,68 @@ if __name__ == '__main__':
                 case "close":
                     write()
                     break
+
                 case "width":
-                    if len(command) <= 2:
-                        print('Need more params.')
-                    elif len(command) == 3:
-                        changeRoadWidth(command[1], float(command[2]))
-                    elif len(command) == 4:
-                        changeRoadWidth(command[1], float(command[2]), command[3])
-                    elif len(command) == 5:
-                        changeRoadWidth(command[1], float(command[2]), command[3], bool(command[4]))
-                    elif len(command) == 6:
-                        print("TBD")
-                    else:
-                        print("Too much params!")
-                case "slope":
-                    if len(command) <= 2:
-                        print('Need more params.')
-                    elif len(command) == 3:
-                        changeRoadsSlope(command[1], float(command[2]))
-                    elif len(command) == 4:
-                        changeRoadsSlope(command[1], float(command[2]), command[3])
-                    elif len(command) == 5:
-                        changeRoadsSlope(command[1], float(command[2]), command[3], int(command[4]))
-                    elif len(command) == 6:
-                        changeRoadsSlope(command[1], float(command[2]), command[3], int(command[4]), int(command[5]))
-                    else:
-                        print("Too much params!")
+                    id = None
+                    v = None
+                    m = 'add'
+                    s = False
+                    i = []
+                    for i in range(1, len(command)):
+                        param = command[i].split('=')
+                        match param[0]:
+                            case 'id': id = param[1]
+                            case 'v': v = float(param[1])
+                            case 'm': m = param[1]
+                            case 's': s = bool(param[1])
+                            case 'i': i = param[1] #TODO
+                            case _: print("Illegal parameter!")
+                            
+                    if id == None or v == None:
+                        print("Illegal command! Required parameter missing.")
+                        continue
+                    changeRoadWidth(id=id, value=v, mode=m, smooth=s, infos=i)
 
                 case "widths":
-                    if len(command) <= 2:
-                        print('Need more params.')
-                    elif len(command) == 3:
-                        changeRoadsWidth(command[1], float(command[2]))
-                    elif len(command) == 4:
-                        changeRoadsWidth(command[1], float(command[2]), command[3])
-                    elif len(command) == 5:
-                        changeRoadsWidth(command[1], float(command[2]), command[3], int(command[4]))
-                    else:
-                        print("Too much params!")
-                
-    
+                    id = None
+                    v = None
+                    m = 'add'
+                    s = 0
+                    sh = False
+                    for i in range(1, len(command)):
+                        param = command[i].split('=')
+                        match param[0]:
+                            case 'id': id = param[1]
+                            case 'v': v = float(param[1])
+                            case 'm': m = param[1]
+                            case 's': s = int(param[1])
+                            case 'sh': sh = bool(param[1])
+                            case _: print("Illegal parameter!")
 
-    
+                    if id == None or v == None:
+                        print("Illegal command! Required parameter missing.")
+                        continue
+                    changeRoadsWidth(id=id, value=v, mode=m, maxStep=s, sameHdg=sh)
 
+                case "slope":
+                    id = None
+                    v = None
+                    m = 'add'
+                    mv = cons.MOVE_BOTH
+                    s = 0
+                    sh = False
+                    for i in range(1, len(command)):
+                        param = command[i].split('=')
+                        match param[0]:
+                            case 'id': id = param[1]
+                            case 'v': v = float(param[1])
+                            case 'm': m = param[1]
+                            case 'mv': mv = int(param[1])
+                            case 's': s = int(param[1])
+                            case 'sh': sh = bool(param[1])
+                            case _: print("Illegal parameter!")
+
+                    if id == None or v == None:
+                        print("Illegal command! Required parameter missing.")
+                        continue
+                    changeRoadsSlope(id=id, value=v, mode=m, move=mv, maxStep=s, sameHdg=sh)
