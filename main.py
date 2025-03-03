@@ -4,13 +4,14 @@ import variables as vars
 from constants import *
 from width import *
 from elevation import *
+from curvature import *
 
 def write():
     vars.tree.write("D:\\Users\\cling\\Documents\\Homework\\Codes\\xodr_project\\test\\"+vars.saveName, encoding="utf-8", xml_declaration=True)
     print('Already saved.')
 
 def open(str):
-    vars.updateTree(ET.parse("D:\\Users\\cling\\Documents\\Homework\\Codes\\xodr_project\\test\\"+str))
+    vars.updateTree(ET.parse("D:\\Users\\cling\\Documents\\Homework\\Codes\\xodr_project\\test\\"+str+".xodr"))
     vars.updateRoot(vars.tree.getroot())
 
     jSets = [[-1, -1] for _ in range(1000)]
@@ -78,7 +79,7 @@ if __name__ == '__main__':
                     v = None
                     m = 'add'
                     s = False
-                    i = []
+                    I = []
                     for i in range(1, len(command)):
                         param = command[i].split('=')
                         match param[0]:
@@ -86,13 +87,23 @@ if __name__ == '__main__':
                             case 'v': v = float(param[1])
                             case 'm': m = param[1]
                             case 's': s = bool(param[1])
-                            case 'i': i = param[1] #TODO
+                            case 'i':
+                                sects = param[1].split(';')
+                                for sect in sects: 
+                                    lanes = sect.split(',')
+                                    if len(lanes) <= 1:
+                                        print("Illegal parameter!")
+
+                                    info = {"id": int(lanes[0]), "lanes": []}
+                                    for j in range(1, len(lanes)):
+                                        info["lanes"].append(int(lanes[j]))
+                                    I.append(info)
                             case _: print("Illegal parameter!")
                             
                     if id == None or v == None:
                         print("Illegal command! Required parameter missing.")
                         continue
-                    changeRoadWidth(id=id, value=v, mode=m, smooth=s, infos=i)
+                    changeRoadWidth(id=id, value=v, mode=m, smooth=s, infos=I)
 
                 case "widths":
                     id = None
@@ -130,10 +141,27 @@ if __name__ == '__main__':
                             case 'm': m = param[1]
                             case 'mv': mv = int(param[1])
                             case 's': s = int(param[1])
-                            case 'sh': sh = bool(param[1])
+                            case 'sh': sh = int(param[1])
                             case _: print("Illegal parameter!")
 
                     if id == None or v == None:
                         print("Illegal command! Required parameter missing.")
                         continue
                     changeRoadsSlope(id=id, value=v, mode=m, move=mv, maxStep=s, sameHdg=sh)
+
+                case "curve":
+                    id = None
+                    v = None
+                    p = 0.5
+                    for i in range(1, len(command)):
+                        param = command[i].split('=')
+                        match param[0]:
+                            case 'id': id = param[1]
+                            case 'v': v = float(param[1])
+                            case 'p': p = float(param[1])
+                            case _: print("Illegal parameter!")
+
+                    if id == None or v == None:
+                        print("Illegal command! Required parameter missing.")
+                        continue
+                    changeRoadArc(id=id, value=v, position=p)

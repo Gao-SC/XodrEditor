@@ -78,9 +78,10 @@ def setWidth(width: ET.Element, value, mode, smooth = 0, distance = 0):
       return
     
 # change specific road width (on lanes)
-# Infos: [{"id":0, "lanes": [-1, 1, 2]}]#TODO
+# Infos: [{"id":0, "lanes": [-1, 1, 2]}]
 
 def changeRoadWidth(id, value, mode = 'add', smooth = False, infos = []):
+  print(infos)
   for road in vars.root.iter('road'):
     if road.get('id') == id:
       sections = road.find('lanes').findall('laneSection')
@@ -104,7 +105,7 @@ def changeRoadWidth(id, value, mode = 'add', smooth = False, infos = []):
                   setWidth(widths[j], value, mode,  1, nextS)
               else:
                 setWidth(widths[j], value, mode)
-      # Following codes won't be used now
+
       else:
         ids = []
         for i in infos:
@@ -119,7 +120,8 @@ def changeRoadWidth(id, value, mode = 'add', smooth = False, infos = []):
           lanesNum = len(i['lanes'])
           value = value/lanesNum if mode == 'add' else value
           section = sections[i['id']]
-          for lane in section.iter('.//lane'):
+
+          for lane in section.findall('.//lane'):
             if int(lane.get('id')) not in i['lanes']:
                 continue
             
