@@ -6,13 +6,17 @@ from width import *
 from elevation import *
 from curvature import *
 
+PATH = "D:\\Users\\cling\\Documents\\Homework\\Codes\\xodr_project\\test\\"
+
 def write():
-    vars.tree.write("D:\\Users\\cling\\Documents\\Homework\\Codes\\xodr_project\\test\\"+vars.saveName, encoding="utf-8", xml_declaration=True)
+    vars.tree.write(PATH+vars.saveName, encoding="utf-8", xml_declaration=True)
     print('Already saved.')
 
 def open(str):
-    vars.updateTree(ET.parse("D:\\Users\\cling\\Documents\\Homework\\Codes\\xodr_project\\test\\"+str+".xodr"))
-    vars.updateRoot(vars.tree.getroot())
+    vars.clearTrees()
+    vars.updateTrees(ET.parse(PATH+str+".xodr"))
+    vars.updateRoot(vars.trees[-1].getroot())
+    vars.connectSets = [[] for _ in range(1000)]
 
     jSets = [[-1, -1] for _ in range(1000)]
     for road in vars.root.iter('road'):
@@ -50,12 +54,10 @@ def open(str):
             point = jSets[incId][1] == jId
             if [conId, point, direction] not in vars.connectSets[incId]:
                 vars.connectSets[incId].append([conId, point, direction])
-    
-'''    for i in range(len(vars.connectSets)):
-        _ = vars.connectSets[i]
-        if _ != []:
-            print(i)
-            print(_)'''
+
+def pushNewTree():
+    vars.updateTrees(vars.trees[-1])
+    vars.updateRoot(vars.trees[-1].getroot())
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
@@ -73,8 +75,13 @@ if __name__ == '__main__':
                 case "close":
                     write()
                     break
+                case "redo":
+                    vars.redoTrees()
+                case "saveName":
+                    vars.saveName = command[1]
 
                 case "width":
+                    pushNewTree()
                     id = None
                     v = None
                     m = 'add'
@@ -106,6 +113,7 @@ if __name__ == '__main__':
                     changeRoadWidth(id=id, value=v, mode=m, smooth=s, infos=I)
 
                 case "widths":
+                    pushNewTree()
                     id = None
                     v = None
                     m = 'add'
@@ -127,6 +135,7 @@ if __name__ == '__main__':
                     changeRoadsWidth(id=id, value=v, mode=m, maxStep=s, sameHdg=sh)
 
                 case "slope":
+                    pushNewTree()
                     id = None
                     v = None
                     m = 'add'
@@ -150,18 +159,27 @@ if __name__ == '__main__':
                     changeRoadsSlope(id=id, value=v, mode=m, move=mv, maxStep=s, sameHdg=sh)
 
                 case "curve":
+                    pushNewTree()
                     id = None
-                    v = None
-                    p = 0.5
+                    v0 = None
+                    v1 = None
+                    h0 = 0
+                    h1 = 0
                     for i in range(1, len(command)):
                         param = command[i].split('=')
                         match param[0]:
                             case 'id': id = param[1]
-                            case 'v': v = float(param[1])
-                            case 'p': p = float(param[1])
+                            case 'v0': v0 = float(param[1])
+                            case 'v1': v1 = float(param[1])
+                            case 'h0': h0 = float(param[1])
+                            case 'h1': h1 = float(param[1])
                             case _: print("Illegal parameter!")
 
-                    if id == None or v == None:
+                    if id == None or v0 == None or v1 == None:
                         print("Illegal command! Required parameter missing.")
                         continue
-                    changeRoadArc(id=id, value=v, position=p)
+                    changeRoadArc(id=id, v0=v0, v1=v1, h0=h0, h1=h1)
+            
+                    
+
+            

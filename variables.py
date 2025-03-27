@@ -1,10 +1,22 @@
 import numpy
+from collections import deque
 
 
-tree = None
-def updateTree(new_val):
-    global tree
-    tree = new_val
+trees = deque()
+def updateTrees(new_val):
+    global trees
+    trees.append(new_val)
+    if trees.count() > 256:
+        trees.popleft()
+
+def redoTrees():
+    global trees
+    if trees.count() > 0:
+        trees.pop()
+
+def clearTrees():
+    global trees
+    trees.clear()
 
 root = None
 def updateRoot(new_val):

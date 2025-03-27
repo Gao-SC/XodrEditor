@@ -5,7 +5,7 @@ from constants import *
 from collections import deque
 import numpy
 
-def setWidth(width: ET.Element, value, mode, smooth = 0, distance = 0):
+def setWidth(width: ET.Element, value, mode, smooth=0, distance=0):
   match mode:
     case 'add':
       if smooth == -1:
@@ -80,7 +80,7 @@ def setWidth(width: ET.Element, value, mode, smooth = 0, distance = 0):
 # change specific road width (on lanes)
 # Infos: [{"id":0, "lanes": [-1, 1, 2]}]
 
-def changeRoadWidth(id, value, mode = 'add', smooth = False, infos = []):
+def  changeRoadWidth(id, value, mode='add', smooth=False, infos=[]):
   print(infos)
   for road in vars.root.iter('road'):
     if road.get('id') == id:
@@ -140,7 +140,7 @@ def changeRoadWidth(id, value, mode = 'add', smooth = False, infos = []):
 
 ## 限制同向传播
 ## mul
-def changeRoadsWidth(id, value, mode = 'add', maxStep = 0, sameHdg=0, new = True):
+def changeRoadsWidth(id, value, mode='add', maxStep=0, sameHdg=0, new=True):
   for road in vars.root.iter('road'):
     if road.get('id') == id:
       length = get(road, 'length')
