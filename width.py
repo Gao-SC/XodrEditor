@@ -5,160 +5,91 @@ from constants import *
 from collections import deque
 import numpy
 
-def setWidth(width: ET.Element, value, mode, smooth=0, distance=0):
+def setWidth(width: ET.Element, value, mode, distance=0):
+  a = get(width, 'a')
+  b = get(width, 'b')
+  c = get(width, 'c')
+  d = get(width, 'd')
   match mode:
     case 'add':
-      if smooth == -1:
-        a = get(width, 'a')
-        b = get(width, 'b')
-        c = get(width, 'c')
-        d = get(width, 'd')
-        x = distance-get(width, 'sOffset')
-        newC = c+3*value/x**2
-        newD = d-2*value/x**3
-        set(width, 'c', newC)
-        set(width, 'd', newD)
-      elif smooth == 1:
-        a = get(width, 'a')
-        b = get(width, 'b')
-        c = get(width, 'c')
-        d = get(width, 'd')
-        x = distance-get(width, 'sOffset')
-        newC = c-3*value/x**2
-        newD = d+2*value/x**3
-        set(width, 'a', a+value)
-        set(width, 'c', newC)
-        set(width, 'd', newD)
-      else:
-        set(width, 'a', value+get(width, 'a'))
-
-    case 'mul':
-      if smooth == -1:
-        a = get(width, 'a')
-        b = get(width, 'b')
-        c = get(width, 'c')
-        d = get(width, 'd')
-        x = distance-get(width, 'sOffset')
-        newC = c*value-(3*a+2*b*x)*(1-value)/x**2
-        newD = d*value+(2*a+  b*x)*(1-value)/x**3
-        set(width, 'c', newC)
-        set(width, 'd', newD)
-      elif smooth == 1:
-        a = get(width, 'a')
-        b = get(width, 'b')
-        c = get(width, 'c')
-        d = get(width, 'd')
-        x = distance-get(width, 'sOffset')
-        newC = c+(3*a+2*b*x)*(1-value)/x**2
-        newD = d-(2*a+  b*x)*(1-value)/x**3
-        set(width, 'a', a*value)
-        set(width, 'b', b*value)
-        set(width, 'c', newC)
-        set(width, 'd', newD)
-      else:
-        set(width, 'a', value*get(width, 'a'))
-        set(width, 'b', value*get(width, 'b'))
-        set(width, 'c', value*get(width, 'c'))
-        set(width, 'd', value*get(width, 'd'))
-    case 'addt':
-      a = get(width, 'a')
-      b = get(width, 'b')
+      set(width, 'a', value+get(width, 'a'))
+    case 'stail1':
+      x = distance-get(width, 'sOffset')
+      newC = c-3*value/x**2
+      newD = d+2*value/x**3
+      set(width, 'a', a+value)
+      set(width, 'c', newC)
+      set(width, 'd', newD)
+    case 'shead1':
+      x = distance-get(width, 'sOffset')
+      newC = c+3*value/x**2
+      newD = d-2*value/x**3
+      set(width, 'c', newC)
+      set(width, 'd', newD)
+    case 'stail2':
       x = distance-get(width, 'sOffset')
       value*x/distance
       set(width, 'a', a+value/distance*x)
       set(width, 'b', b-value/distance)
-    case 'addh':
-      a = get(width, 'a')
-      b = get(width, 'b')
+    case 'shead2':
       x = get(width, 'sOffset')
       value*x/distance
       set(width, 'a', a+value/distance*x)
       set(width, 'b', b+value/distance)
+
+    case 'mul':
+      set(width, 'a', value*get(width, 'a'))
+      set(width, 'b', value*get(width, 'b'))
+      set(width, 'c', value*get(width, 'c'))
+      set(width, 'd', value*get(width, 'd'))
     case _:
       return
     
 # change specific road width (on lanes)
-# Infos: [{"id":0, "lanes": [-1, 1, 2]}]
-
-def  changeRoadWidth(id, value, mode='add', smooth=False, infos=[]):
-  print(infos)
-  for road in vars.root.iter('road'):
-    if road.get('id') == id:
-      sections = road.find('lanes').findall('laneSection')
-      sectsNum = len(sections)
-      if infos == []:
-        for i in range(sectsNum):
-          lanesNum = len(sections[i].findall('.//lane'))-1
-          value = value/lanesNum if mode == 'add' else value
-
-          for lane in sections[i].findall('.//lane'):
-
-            widths = lane.findall('width')
-            widthNum = len(widths)
-
-            for j in range(widthNum-1):
-              if smooth and i == 0 and j == 0:
-                  nextS = get(widths[j+1], 'sOffset')
-                  setWidth(widths[j], value, mode, -1, nextS)
-              elif smooth and i == sectsNum-1 and j == widthNum-2:
-                  nextS = get(widths[j+1], 'sOffset')
-                  setWidth(widths[j], value, mode,  1, nextS)
-              else:
-                setWidth(widths[j], value, mode)
-
-      else:
-        ids = []
-        for i in infos:
-          ids.append(i['id'])
-
-        for i in infos:
-          sectsNum = len(sections)
-          if i['id'] >= sectsNum:
-            print("Error, out of range.")
-            return
-          
-          lanesNum = len(i['lanes'])
-          value = value/lanesNum if mode == 'add' else value
-          section = sections[i['id']]
-
-          for lane in section.findall('.//lane'):
-            if int(lane.get('id')) not in i['lanes']:
-                continue
-            
-            widths = lane.findall('width')
-            widthNum = len(widths)
-            for j in range(widthNum-1):
-              if smooth and j == 0 and i['id']-1 not in ids:
-                nextS = get(widths[j+1], 'sOffset')
-                setWidth(widths[j], value, mode, -1, nextS)
-              elif smooth and j == widthNum-2 and i['id']+1 not in ids:
-                nextS = get(widths[j+1], 'sOffset')
-                setWidth(widths[j], value, mode,  1, nextS)
-              else:
-                setWidth(widths[j], value, mode)
-      break
-
-## 限制同向传播
-## mul
-def changeRoadsWidth(id, value, mode='add', maxStep=0, sameHdg=0, new=True):
+# Infos: [-1, -1, 2]
+## 仅有一个LaneSection
+def changeRoadsWidth(id, value, mode='add', smooth=0, maxStep=0, sameHdg=0, laneIds=[], new=True):
   for road in vars.root.iter('road'):
     if road.get('id') == id:
       length = get(road, 'length')
-      sections = road.find('lanes').findall('laneSection')
-      sectsNum = len(sections)
-      
-      for i in range(sectsNum):
-        lanesNum = len(sections[i].findall('.//lane'))-1
-        w = value/lanesNum
+      section = road.find('lanes').find('laneSection')
 
-        for lane in sections[i].findall('.//lane'):
+      if laneIds == []:
+        for lane in section.findall('.//lane'):
+          laneIds.append(int(lane.get('id')))
+      lanesNum = len(laneIds)
 
-          widths = lane.findall('width')
-          widthNum = len(widths)
+      v = value/lanesNum if mode != 'mul' else value
+      for lane in section.findall('.//lane'):
+        lid = int(lane.get('id'))
+        if lid not in laneIds:
+          continue
+        widths = lane.findall('width')
+        widthNum = len(widths)
 
-          for j in range(widthNum):
-            setWidth(widths[j], w, mode, distance=length)
-      
+
+        for j in range(widthNum):
+          match (mode, smooth):
+            case ('add', x):
+              setWidth(widths[j], v, 'add')
+            case ('mul', x):
+              setWidth(widths[j], v, 'mul')
+            case ('addt', 1):
+              if j == 0:
+                nextS = get(widths[j+1], 'sOffset')
+                setWidth(widths[j], v, 'stail1', distance=nextS)
+            case ('addh', 1):
+              if j == widthNum-2:
+                nextS = get(widths[j+1], 'sOffset')
+                setWidth(widths[j], v, 'shead1', distance=nextS)
+
+            case ('addt', 2):
+              setWidth(widths[j], v, 'stail2', distance=length)
+            case ('addh', 2):
+              setWidth(widths[j], v, 'shead2', distance=length)
+            case _:
+              continue
+
       if not new:
         return
       
@@ -184,13 +115,12 @@ def changeRoadsWidth(id, value, mode='add', maxStep=0, sameHdg=0, new=True):
       for r in vars.root.iter('road'):
         newId = r.get('id')
         num = vars.edits[int(newId)]
-        if num == cons.TAIL_EDITED:   # change tail
-          changeRoadsWidth(newId, value, 'addt', new=False)
-        elif num == cons.HEAD_EDITED: # change head
-          changeRoadsWidth(newId, value, 'addh', new=False)
+        if num == cons.TAIL_EDITED and smooth:   # change tail
+          changeRoadsWidth(newId, value, 'addt', smooth, new=False)
+        elif num == cons.HEAD_EDITED and smooth: # change head
+          changeRoadsWidth(newId, value, 'addh', smooth, new=False)
         elif num == cons.BOTH_EDITED: # change both
           changeRoadsWidth(newId, value, 'add', new=False)
-
       return
 
 def setChange(di, id, maxStep, sameHdg, hdg):
@@ -259,3 +189,64 @@ def setChange(di, id, maxStep, sameHdg, hdg):
       for info in vars.connectSets[id]:
         if info[1] == cons.HEAD:
           queue.append({"id": info[0], "di": info[2], "step": step})
+
+
+'''
+def  changeRoadWidth(id, value, mode='add', smooth=False, infos=[]):
+  print(infos)
+  for road in vars.root.iter('road'):
+    if road.get('id') == id:
+      sections = road.find('lanes').findall('laneSection')
+      sectsNum = len(sections)
+      if infos == []:
+        for i in range(sectsNum):
+          lanesNum = len(sections[i].findall('.//lane'))-1
+          value = value/lanesNum if mode == 'add' else value
+
+          for lane in sections[i].findall('.//lane'):
+
+            widths = lane.findall('width')
+            widthNum = len(widths)
+
+            for j in range(widthNum-1):
+              if smooth and i == 0 and j == 0:
+                  nextS = get(widths[j+1], 'sOffset')
+                  setWidth(widths[j], value, mode, -1, nextS)
+              elif smooth and i == sectsNum-1 and j == widthNum-2:
+                  nextS = get(widths[j+1], 'sOffset')
+                  setWidth(widths[j], value, mode,  1, nextS)
+              else:
+                setWidth(widths[j], value, mode)
+
+      else:
+        ids = []
+        for i in infos:
+          ids.append(i['id'])
+
+        for i in infos:
+          sectsNum = len(sections)
+          if i['id'] >= sectsNum:
+            print("Error, out of range.")
+            return
+          
+          lanesNum = len(i['lanes'])
+          value = value/lanesNum if mode == 'add' else value
+          section = sections[i['id']]
+
+          for lane in section.findall('.//lane'):
+            if int(lane.get('id')) not in i['lanes']:
+                continue
+            
+            widths = lane.findall('width')
+            widthNum = len(widths)
+            for j in range(widthNum-1):
+              if smooth and j == 0 and i['id']-1 not in ids:
+                nextS = get(widths[j+1], 'sOffset')
+                setWidth(widths[j], value, mode, -1, nextS)
+              elif smooth and j == widthNum-2 and i['id']+1 not in ids:
+                nextS = get(widths[j+1], 'sOffset')
+                setWidth(widths[j], value, mode,  1, nextS)
+              else:
+                setWidth(widths[j], value, mode)
+      break
+'''

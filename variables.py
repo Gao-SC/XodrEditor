@@ -1,3 +1,4 @@
+import copy
 import numpy
 from collections import deque
 
@@ -5,13 +6,13 @@ from collections import deque
 trees = deque()
 def updateTrees(new_val):
     global trees
-    trees.append(new_val)
-    if trees.count() > 256:
+    trees.append(copy.deepcopy(new_val))
+    if len(trees) > 256:
         trees.popleft()
 
 def redoTrees():
     global trees
-    if trees.count() > 0:
+    if len(trees) > 1:
         trees.pop()
 
 def clearTrees():

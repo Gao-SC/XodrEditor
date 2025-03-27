@@ -9,7 +9,7 @@ from curvature import *
 PATH = "D:\\Users\\cling\\Documents\\Homework\\Codes\\xodr_project\\test\\"
 
 def write():
-    vars.tree.write(PATH+vars.saveName, encoding="utf-8", xml_declaration=True)
+    vars.trees[-1].write(PATH+vars.saveName, encoding="utf-8", xml_declaration=True)
     print('Already saved.')
 
 def open(str):
@@ -85,40 +85,10 @@ if __name__ == '__main__':
                     id = None
                     v = None
                     m = 'add'
-                    s = False
-                    I = []
-                    for i in range(1, len(command)):
-                        param = command[i].split('=')
-                        match param[0]:
-                            case 'id': id = param[1]
-                            case 'v': v = float(param[1])
-                            case 'm': m = param[1]
-                            case 's': s = bool(param[1])
-                            case 'i':
-                                sects = param[1].split(';')
-                                for sect in sects: 
-                                    lanes = sect.split(',')
-                                    if len(lanes) <= 1:
-                                        print("Illegal parameter!")
-
-                                    info = {"id": int(lanes[0]), "lanes": []}
-                                    for j in range(1, len(lanes)):
-                                        info["lanes"].append(int(lanes[j]))
-                                    I.append(info)
-                            case _: print("Illegal parameter!")
-                            
-                    if id == None or v == None:
-                        print("Illegal command! Required parameter missing.")
-                        continue
-                    changeRoadWidth(id=id, value=v, mode=m, smooth=s, infos=I)
-
-                case "widths":
-                    pushNewTree()
-                    id = None
-                    v = None
-                    m = 'add'
                     s = 0
+                    ms = 0
                     sh = False
+                    li = []
                     for i in range(1, len(command)):
                         param = command[i].split('=')
                         match param[0]:
@@ -126,13 +96,18 @@ if __name__ == '__main__':
                             case 'v': v = float(param[1])
                             case 'm': m = param[1]
                             case 's': s = int(param[1])
-                            case 'sh': sh = bool(param[1])
+                            case 'ms': ms = int(param[1])
+                            case 'sh': sh = int(param[1])
+                            case 'i':
+                                lanes = param[1].split(',')
+                                for lane in lanes:
+                                    li.append(lane)
                             case _: print("Illegal parameter!")
 
                     if id == None or v == None:
                         print("Illegal command! Required parameter missing.")
                         continue
-                    changeRoadsWidth(id=id, value=v, mode=m, maxStep=s, sameHdg=sh)
+                    changeRoadsWidth(id=id, value=v, mode=m, smooth=s, maxStep=ms, sameHdg=sh, laneIds=li)
 
                 case "slope":
                     pushNewTree()
