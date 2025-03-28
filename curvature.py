@@ -34,7 +34,6 @@ def getParams(gs):
   return [x1, y1, h0, h1]
 
 def solvePoly3(params):
-  print(params)
   x3, y3 = params[0], params[1]
   h0, h1 = params[2], params[3]
   v0, v1 = params[4], params[5]
@@ -55,6 +54,7 @@ def getLength(params):
   length, _ = quad(integrand, 0, 1, args=(bX, cX, dX, bY, cY, dY))
   return length
 
+## 拟合圆弧时，v0=v1=cos(theta/2)/(3*cos^2(theta/4))
 def changeRoadArc(id, v0, v1, h0, h1):
   for road in vars.root.iter('road'):
     if road.get('id') == id:
