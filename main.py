@@ -184,8 +184,8 @@ if __name__ == '__main__':
                 case "curve":
                     pushNewTree()
                     id = None
-                    v0 = None
-                    v1 = None
+                    v0 = 0
+                    v1 = 0
                     h0 = 0
                     h1 = 0
                     for i in range(1, len(command)):
@@ -198,7 +198,7 @@ if __name__ == '__main__':
                             case 'h1': h1 = float(param[1])
                             case _: print("Illegal parameter!")
 
-                    if id == None or v0 == None or v1 == None:
+                    if id == None:
                         print("Illegal command! Required parameter missing.")
                         continue
                     changeRoadArc(id=id, v0=v0, v1=v1, h0=h0, h1=h1)
