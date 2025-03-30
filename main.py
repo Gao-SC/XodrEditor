@@ -12,66 +12,98 @@ def write():
     vars.trees[-1].write(PATH+vars.saveName+".xodr", encoding="utf-8", xml_declaration=True)
     print('Already saved.')
 
-def open(str):
+def open(name):
     vars.clearTrees()
-    vars.updateTrees(ET.parse(PATH+'OpenSCENARIO\\'+str+".xodr"))
+    vars.updateTrees(ET.parse(PATH+'OpenSCENARIO\\'+name+".xodr"))
     vars.updateRoot(vars.trees[-1].getroot())
-    vars.connectSets = [[] for _ in range(1000)]
-    vars.laneMap = {}
+    vars.roadConnections = {}
+    vars.laneConnections = {}
+    jSets = {}
+    for road in vars.root.iter('road'):
+        id = road.get('id')
+        gs = road.findall('.//geometry')
 
-    jSets = [[-1, -1] for _ in range(1000)]
+        h0 = get(gs[0], 'hdg')
+        h1 = get(gs[-1],'hdg')
+        poly1 = gs[-1].find('paramPoly3')
+        if poly1 != None:
+            bU, cU, dU = get(poly1, 'bU'), get(poly1, 'cU'), get(poly1, 'dU')
+            bV, cV, dV = get(poly1, 'bV'), get(poly1, 'cV'), get(poly1, 'dV')
+            h1 = (h1+math.atan((bV+2*cV+3*dV)/(bU+2*cU+3*dU)))%(2*numpy.pi)
+        vars.hdgs[id] = []
+        vars.hdgs[id].append(h0)
+        vars.hdgs[id].append(h1)
+
+        vars.roadConnections[id] = [[], []]
+        vars.roadBackup[id] = cons.NOT_EDITED
+        vars.laneConnections[id] = {}
+        vars.laneBackup[id] = {}
+        jSets[id] = [-1, -1]
+        for lane in road.findall('.//lane'):
+            lid = lane.get('id')
+            if lid != '0':
+                vars.laneBackup[id][lid] = cons.NOT_EDITED
+                vars.laneConnections[id][lid] = [[], []]
+
     for road in vars.root.iter('road'):
         id = road.get('id')
         link = road.find('link')
-        pre = link.find('predecessor')
-        suc = link.find('successor')
-        if pre != None:
-            direction = pre.get("contactPoint") == "end"
-            preId = pre.get("elementId")
 
+        pre = link.find('predecessor')
+        if pre != None:
+            direction = int(pre.get("contactPoint") == "end")
+            preId = pre.get("elementId")
             if pre.get("elementType") == "road":
-                if [int(preId), bool(cons.TAIL), direction] not in vars.connectSets[int(id)]:
-                    vars.connectSets[int(id)].append([int(preId), bool(cons.TAIL), direction])
-                if [int(id), direction, bool(cons.TAIL)] not in vars.connectSets[int(preId)]:
-                    vars.connectSets[int(preId)].append([int(id), direction, bool(cons.TAIL)])
+                if [preId, direction] not in vars.roadConnections[id][cons.TAIL]:
+                    vars.roadConnections[id][cons.TAIL].append([preId, direction])
+                if [id, cons.TAIL] not in vars.roadConnections[preId][direction]:
+                    vars.roadConnections[preId][direction].append([id, cons.TAIL])
                 for lane in road.findall('.//lane'):
-                    laneId = lane.get('id')
+                    lid = lane.get('id')
                     Pre = lane.find('link').find('predecessor')
                     if Pre != None:
-                        vars.laneMap[id+" "+preId+" "+laneId] = Pre.get('id')
-                        vars.laneMap[preId+" "+id+" "+Pre.get('id')] = laneId
+                        preLid = Pre.get('id')
+                        if [preId, preLid, direction] not in vars.laneConnections[id][lid][cons.TAIL]:
+                            vars.laneConnections[id][lid][cons.TAIL].append([preId, preLid, direction])
+                        if [id, lid, cons.TAIL] not in vars.laneConnections[preId][preLid][direction]:    
+                            vars.laneConnections[preId][preLid][direction].append([id, lid, cons.TAIL])
             else:
-                jSets[int(id)][0] = int(pre.get("elementId"))
+                jSets[id][0] = pre.get("elementId")
 
+        suc = link.find('successor')
         if suc != None:
-            direction = suc.get("contactPoint") == "end"
+            direction = int(suc.get("contactPoint") == "end")
             sucId = suc.get("elementId")
             if suc.get("elementType") == "road":
-                if [int(sucId), bool(cons.HEAD), direction] not in vars.connectSets[int(id)]:
-                    vars.connectSets[int(id)].append([int(sucId), bool(cons.HEAD), direction])
-                if [int(id), direction, bool(cons.HEAD)] not in vars.connectSets[int(sucId)]:
-                    vars.connectSets[int(sucId)].append([int(id), direction, bool(cons.HEAD)])
+                if [sucId, direction] not in vars.roadConnections[id][cons.HEAD]:
+                    vars.roadConnections[id][cons.HEAD].append([sucId, direction])
+                if [id, cons.HEAD] not in vars.roadConnections[sucId][direction]:
+                    vars.roadConnections[sucId][direction].append([id, cons.HEAD])
                 for lane in road.findall('.//lane'):
-                    laneId = lane.get('id')
+                    lid = lane.get('id')
                     Suc = lane.find('link').find('successor')
                     if Suc != None:
-                        vars.laneMap[id+" "+sucId+" "+laneId] = Suc.get('id')
-                        vars.laneMap[sucId+" "+id+" "+Suc.get('id')] = laneId
+                        sucLid = Suc.get('id')
+                        if [sucId, sucLid, direction] not in vars.laneConnections[id][lid][cons.HEAD]:
+                            vars.laneConnections[id][lid][cons.HEAD].append([sucId, sucLid, direction])
+                        if [id, lid, cons.HEAD] not in vars.laneConnections[sucId][sucLid][direction]:    
+                            vars.laneConnections[sucId][sucLid][direction].append([id, lid, cons.HEAD])
             else:
-                jSets[int(id)][1] = int(suc.get("elementId"))
+                jSets[id][1] = suc.get("elementId")
         
     for junction in vars.root.iter('junction'):
-        jId = int(junction.get('id'))
+        jId = junction.get('id')
         for connection in junction.iter('connection'):
-            direction = connection.get("contactPoint") == "end"
+            direction = int(connection.get("contactPoint") == "end")
             incId = connection.get('incomingRoad'  )
             conId = connection.get('connectingRoad')
-            point = jSets[int(incId)][1] == jId
+            point = int(jSets[incId][1] == jId)
             incLid = connection.find('laneLink').get('from')
             conLid = connection.find('laneLink').get('to'  )
-            vars.laneMap[incId+" "+conId+" "+incLid] = conLid
-            if [int(conId), point, direction] not in vars.connectSets[int(incId)]:
-                vars.connectSets[int(incId)].append([int(conId), point, direction])
+            if [conId, conLid, direction] not in vars.laneConnections[incId][incLid][point]:
+                vars.laneConnections[incId][incLid][point].append([conId, conLid, direction])
+            if [conId, direction] not in vars.roadConnections[incId][point]:
+                vars.roadConnections[incId][point].append([conId, direction])
 
 def pushNewTree():
     vars.updateTrees(vars.trees[-1])
@@ -102,7 +134,6 @@ if __name__ == '__main__':
                     pushNewTree()
                     id = None
                     v = None
-                    m = 'add'
                     s = 0
                     ms = 0
                     sh = False
@@ -112,20 +143,19 @@ if __name__ == '__main__':
                         match param[0]:
                             case 'id': id = param[1]
                             case 'v': v = float(param[1])
-                            case 'm': m = param[1]
                             case 's': s = int(param[1])
                             case 'ms': ms = int(param[1])
                             case 'sh': sh = int(param[1])
                             case 'li':
                                 lanes = param[1].split(',')
                                 for lane in lanes:
-                                    li.append(int(lane))
+                                    li.append(lane)
                             case _: print("Illegal parameter!")
 
                     if id == None or v == None:
                         print("Illegal command! Required parameter missing.")
                         continue
-                    changeRoadsWidth(id=id, value=v, mode=m, smooth=s, maxStep=ms, sameHdg=sh, laneIds=li)
+                    changeRoadsWidth(id=id, value=v, smooth=s, maxStep=ms, sameHdg=sh, laneIds=li)
 
                 case "slope":
                     pushNewTree()
@@ -133,7 +163,7 @@ if __name__ == '__main__':
                     v = None
                     m = 'add'
                     mv = cons.MOVE_BOTH
-                    s = 0
+                    ms = 0
                     sh = False
                     for i in range(1, len(command)):
                         param = command[i].split('=')
@@ -142,14 +172,14 @@ if __name__ == '__main__':
                             case 'v': v = float(param[1])
                             case 'm': m = param[1]
                             case 'mv': mv = int(param[1])
-                            case 's': s = int(param[1])
+                            case 'ms': ms = int(param[1])
                             case 'sh': sh = int(param[1])
                             case _: print("Illegal parameter!")
 
                     if id == None or v == None:
                         print("Illegal command! Required parameter missing.")
                         continue
-                    changeRoadsSlope(id=id, value=v, mode=m, move=mv, maxStep=s, sameHdg=sh)
+                    changeRoadsSlope(id=id, value=v, mode=m, move=mv, maxStep=ms, sameHdg=sh)
 
                 case "curve":
                     pushNewTree()

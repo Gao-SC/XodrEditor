@@ -1,4 +1,4 @@
-import numpy
+import copy
 import math
 import variables as vars
 from collections import deque
@@ -53,28 +53,27 @@ def changeRoadsSlope(id, value, mode, move, maxStep=0, sameHdg=0, new = True):
 
       if not new:
         return
-      vars.edits = numpy.zeros(1000)
-      vars.edits[int(id)] = cons.BOTH_LOCKED
+      vars.roadEdits = copy.deepcopy(vars.roadBackup)
+      vars.roadEdits[id] = cons.BOTH_LOCKED
 
       link = road.find('link')
       pre = link.find('predecessor')
       suc = link.find('successor')
       if move == cons.MOVE_HEAD and pre != None: 
-        lockChange(cons.TAIL, int(id))
+        lockChange(cons.TAIL, id)
       if move == cons.MOVE_TAIL and suc != None: 
-        lockChange(cons.HEAD, int(id))
-
+        lockChange(cons.HEAD, id)
 
       if move != cons.MOVE_HEAD and pre != None:
-        hdg = get(geometries[0], 'hdg')
-        setChange(cons.TAIL, int(id), maxStep, sameHdg, hdg)
+        hdg = vars.hdgs[id][0]
+        setChange(id, cons.TAIL, maxStep, sameHdg, hdg)
       if move != cons.MOVE_TAIL and suc != None:
-        hdg = get(geometries[size-1], 'hdg')
-        setChange(cons.HEAD, int(id), maxStep, sameHdg, hdg)
+        hdg = vars.hdgs[id][1]
+        setChange(id, cons.HEAD, maxStep, sameHdg, hdg)
 
       for r in vars.root.iter('road'):
         newId = r.get('id')
-        num = vars.edits[int(newId)]
+        num = vars.roadEdits[newId]
         if num == cons.TAIL_EDITED or num == cons.TAIL_EDITED2:   # change tail
           print("move tail" + newId)
           changeRoadsSlope(newId, eleva, 'add', cons.MOVE_TAIL, new=False)
@@ -88,20 +87,17 @@ def changeRoadsSlope(id, value, mode, move, maxStep=0, sameHdg=0, new = True):
       return
 
 def lockChange(direction, id):
-  for info in vars.connectSets[id]:
-    if info[1] == direction:
-      dir2 = info[2]
-      if dir2:
-        vars.edits[info[0]] = cons.HEAD_LOCKED
-      else:
-        vars.edits[info[0]] = cons.TAIL_LOCKED
+  for info in vars.roadConnections[id][direction]:
+    if info[1]:
+      vars.roadEdits[info[0]] = cons.HEAD_LOCKED
+    else:
+      vars.roadEdits[info[0]] = cons.TAIL_LOCKED
 
-def setChange(di, id, maxStep, sameHdg, hdg):
+def setChange(id, di, maxStep, sameHdg, hdg):
   queue = deque()
 
-  for info in vars.connectSets[id]:
-    if info[1] == di:
-      queue.append({"id": info[0], "di": info[2], "step": 0})
+  for info in vars.roadConnections[id][di]:
+    queue.append({"id": info[0], "di": info[1], "step": 0})
 
   while len(queue) > 0:
     item = queue.popleft()
@@ -110,74 +106,57 @@ def setChange(di, id, maxStep, sameHdg, hdg):
     step = item['step']
 
     if sameHdg:
-      for road in vars.root.iter('road'):
-        if get(road, 'id') == id:
-          planView = road.find('planView')
-          for geometry in planView.iter('geometry'):
-            newHdg = get(geometry, 'hdg')
-            angle = (newHdg-hdg)%(2*math.pi)
-            if angle > math.pi/4 and angle < math.pi/4*3 or angle > math.pi/4*5 and angle < math.pi/4*7:
-              step = maxStep
-              break
-          break
+      angle0 = (vars.hdgs[id][0]-hdg)%(2*math.pi)
+      angle1 = (vars.hdgs[id][1]-hdg)%(2*math.pi)
+      m1, m2, m3, m4 = math.pi/4, math.pi/4*3, math.pi/4*5, math.pi/4*7
+      if angle0 > m1 and angle0 < m2 or angle0 > m3 and angle0 < m4:
+        step = maxStep
+      elif angle1 > m1 and angle1 < m2 or angle1 > m3 and angle1 < m4:
+        step = maxStep
   
     if step < maxStep:
-      match vars.edits[id]:
-        case cons.NOT_EDITED:
-          vars.edits[id] = cons.BOTH_EDITED
-          for info in vars.connectSets[id]:
-            queue.append({"id": info[0], "di": info[2], "step": step+1})
-
+      match vars.roadEdits[id]:
+        case cons.NOT_EDITED | cons.TAIL_EDITED | cons.HEAD_EDITED:
+          vars.roadEdits[id] = cons.BOTH_EDITED
+          for info in vars.roadConnections[id][0]:
+            queue.append({"id": info[0], "di": info[1], "step": step+1})
+          for info in vars.roadConnections[id][1]:
+            queue.append({"id": info[0], "di": info[1], "step": step+1})
         case cons.TAIL_LOCKED:
-          vars.edits[id] = cons.HEAD_EDITED2
-          for info in vars.connectSets[id]:
-            if info[1] == cons.HEAD:
-              queue.append({"id": info[0], "di": info[2], "step": step+1})
-
+          vars.roadEdits[id] = cons.HEAD_EDITED2
+          for info in vars.roadConnections[id][cons.HEAD]:
+            queue.append({"id": info[0], "di": info[1], "step": step+1})
         case cons.HEAD_LOCKED:
-          vars.edits[id] = cons.TAIL_EDITED2
-          for info in vars.connectSets[id]:
-            if info[1] == cons.TAIL:
-              queue.append({"id": info[0], "di": info[2], "step": step+1})
-
-        case cons.TAIL_EDITED:
-          vars.edits[id] = cons.BOTH_EDITED
-          for info in vars.connectSets[id]:
-            queue.append({"id": info[0], "di": info[2], "step": step+1})
-        case cons.HEAD_EDITED:
-          vars.edits[id] = cons.BOTH_EDITED
-          for info in vars.connectSets[id]:
-            queue.append({"id": info[0], "di": info[2], "step": step+1})
+          vars.roadEdits[id] = cons.TAIL_EDITED2
+          for info in vars.roadConnections[id][cons.TAIL]:
+            queue.append({"id": info[0], "di": info[1], "step": step+1})
         case _:
           continue
     
     elif step == maxStep and di == cons.TAIL:
-      match vars.edits[id]:
+      match vars.roadEdits[id]:
         case cons.NOT_EDITED:
-          vars.edits[id] = cons.TAIL_EDITED
+          vars.roadEdits[id] = cons.TAIL_EDITED
         case cons.HEAD_LOCKED:
-          vars.edits[id] = cons.TAIL_EDITED2
+          vars.roadEdits[id] = cons.TAIL_EDITED2
         case cons.HEAD_EDITED:
-          vars.edits[id] = cons.BOTH_EDITED
+          vars.roadEdits[id] = cons.BOTH_EDITED
         case _:
           continue
-      for info in vars.connectSets[id]:
-        if info[1] == cons.TAIL:
-          queue.append({"id": info[0], "di": info[2], "step": step})
+      for info in vars.roadConnections[id][cons.TAIL]:
+        queue.append({"id": info[0], "di": info[1], "step": step})
     elif step == maxStep and di == cons.HEAD:
-      match vars.edits[id]:
+      match vars.roadEdits[id]:
         case cons.NOT_EDITED:
-          vars.edits[id] = cons.HEAD_EDITED
+          vars.roadEdits[id] = cons.HEAD_EDITED
         case cons.TAIL_LOCKED:
-          vars.edits[id] = cons.HEAD_EDITED2
+          vars.roadEdits[id] = cons.HEAD_EDITED2
         case cons.TAIL_EDITED:
-          vars.edits[id] = cons.BOTH_EDITED
+          vars.roadEdits[id] = cons.BOTH_EDITED
         case _:
           continue
-      for info in vars.connectSets[id]:
-        if info[1] == cons.HEAD:
-          queue.append({"id": info[0], "di": info[2], "step": step})
-
+      for info in vars.roadConnections[id][cons.HEAD]:
+        queue.append({"id": info[0], "di": info[1], "step": step})
 
 '''def adjustElevation(id, start, h, layer, maxLayer):
   if layer >= maxLayer:

@@ -3,7 +3,7 @@ import math
 import variables as vars
 from constants import *
 from collections import deque
-import numpy
+import copy
 
 def setWidth(width: ET.Element, value, mode, distance=0):
   a = get(width, 'a')
@@ -46,156 +46,124 @@ def setWidth(width: ET.Element, value, mode, distance=0):
       return
     
 # change specific road width (on lanes)
-# Infos: [-1, -1, 2]
-## 仅有一个LaneSection
-def changeRoadsWidth(id, value, mode='add', smooth=0, maxStep=0, sameHdg=0, laneIds=[], new=True):
+## 默认仅有一个LaneSection
+## TODO 因一些原因暂时删除了按比例拓宽
+def changeRoadsWidth(id, value, smooth=0, maxStep=0, sameHdg=0, laneIds=[]):
+  vars.laneEdits = copy.deepcopy(vars.laneBackup)
+  # TODO if mode == 'mul':
+  if laneIds == []:
+    for lid, info in vars.laneEdits[id].items():
+      info = cons.BOTH_EDITED
+      setChange(id, lid, cons.TAIL, maxStep, sameHdg, vars.hdgs[id][0])
+      setChange(id, lid, cons.HEAD, maxStep, sameHdg, vars.hdgs[id][1])
+    value = value/len(vars.laneEdits[id].values())
+  else:
+    for lid in laneIds:
+      vars.laneEdits[id][lid] = cons.BOTH_EDITED
+      setChange(id, lid, cons.TAIL, maxStep, sameHdg, vars.hdgs[id][0])
+      setChange(id, lid, cons.HEAD, maxStep, sameHdg, vars.hdgs[id][1])
+    value = value/len(laneIds)
+
+  for rid, rEdit in vars.laneEdits.items():
+    for lid, info in rEdit.items():
+      if info == cons.TAIL_EDITED and smooth:
+        editLaneWidth(rid, lid, value, 'addt', smooth)
+      elif info == cons.HEAD_EDITED and smooth:
+        editLaneWidth(rid, lid, value, 'addh', smooth)
+      elif info == cons.BOTH_EDITED:
+        editLaneWidth(rid, lid, value, 'add' , smooth)
+
+def editLaneWidth(id, lid, value, mode, smooth):
   for road in vars.root.iter('road'):
-    if road.get('id') == id:
-      length = get(road, 'length')
-      section = road.find('lanes').find('laneSection')
+    if road.get('id') != id:
+      continue
+    length = get(road, 'length')
+    section = road.find('lanes').find('laneSection')
 
-      if laneIds == []:
-        for lane in section.findall('.//lane'):
-          if lane.get('id') != '0':
-            laneIds.append(int(lane.get('id')))
-      lanesNum = len(laneIds)
+    for lane in section.findall('.//lane'):
+      if lane.get('id') != lid:
+        continue
+      widths = lane.findall('width')
+      widthNum = len(widths)
 
-      v = value/lanesNum if mode != 'mul' else value
-      for lane in section.findall('.//lane'):
-        lid = int(lane.get('id'))
-        if lid not in laneIds:
-          continue
-        widths = lane.findall('width')
-        widthNum = len(widths)
+      for j in range(widthNum):
+        match (mode, smooth):
+          case ('add', x):
+            setWidth(widths[j], value, 'add')
+          case ('mul', x):
+            setWidth(widths[j], value, 'mul')
+          case ('addt', 1):
+            if j == 0:
+              nextS = get(widths[j+1], 'sOffset')
+              setWidth(widths[j], value, 'stail1', distance=nextS)
+          case ('addh', 1):
+            if j == widthNum-2:
+              nextS = get(widths[j+1], 'sOffset')
+              setWidth(widths[j], value, 'shead1', distance=nextS)
 
-
-        for j in range(widthNum):
-          match (mode, smooth):
-            case ('add', x):
-              setWidth(widths[j], v, 'add')
-            case ('mul', x):
-              setWidth(widths[j], v, 'mul')
-            case ('addt', 1):
-              if j == 0:
-                nextS = get(widths[j+1], 'sOffset')
-                setWidth(widths[j], v, 'stail1', distance=nextS)
-            case ('addh', 1):
-              if j == widthNum-2:
-                nextS = get(widths[j+1], 'sOffset')
-                setWidth(widths[j], v, 'shead1', distance=nextS)
-
-            case ('addt', 2):
-              setWidth(widths[j], v, 'stail2', distance=length)
-            case ('addh', 2):
-              setWidth(widths[j], v, 'shead2', distance=length)
-            case _:
-              continue
-
-      if not new:
-        return
-      
-      #tailV, headV = value, value
-      #if mode == 'mul':
-      #  tailV =
-      vars.edits = numpy.zeros(1000)
-      vars.edits[int(id)] = cons.BOTH_LOCKED
-      vars.laneEdits = [[] for _ in range(1000)]
-      vars.laneEdits[int(id)] = laneIds
-
-      link = road.find('link')
-      pre = link.find('predecessor')
-      suc = link.find('successor')
-      geometries = road.find('planView').findall('geometry')
-      size = len(geometries)
-
-      if pre != None:
-        hdg = get(geometries[0], 'hdg')
-        setChange(cons.TAIL, int(id), maxStep, sameHdg, hdg)
-      if suc != None:
-        hdg = get(geometries[size-1], 'hdg')
-        setChange(cons.HEAD, int(id), maxStep, sameHdg, hdg)
-
-      for r in vars.root.iter('road'):
-        newId = r.get('id')
-        num = vars.edits[int(newId)]
-        if newId == "14":
-          print(num)
-        if num == cons.TAIL_EDITED and smooth:   # change tail #TODO
-          changeRoadsWidth(newId, value, 'addt', smooth, laneIds=vars.laneEdits[int(newId)], new=False)
-        elif num == cons.HEAD_EDITED and smooth: # change head
-          changeRoadsWidth(newId, value, 'addh', smooth, laneIds=vars.laneEdits[int(newId)], new=False)
-        elif num == cons.BOTH_EDITED: # change both
-          changeRoadsWidth(newId, value, 'add', laneIds=vars.laneEdits[int(newId)], new=False)
+          case ('addt', 2):
+            setWidth(widths[j], value, 'stail2', distance=length)
+          case ('addh', 2):
+            setWidth(widths[j], value, 'shead2', distance=length)
+          case _:
+            continue
       return
 
-def setChange(di, id, maxStep, sameHdg, hdg):
+def setChange(id, lid, di, maxStep, sameHdg, hdg):
   queue = deque()
   step = 0
 
-  for info in vars.connectSets[id]:
-    if info[1] == di:
-      queue.append({"id": info[0], "di": info[2], "step": 0})
-      vars.laneEdits[info[0]] = searchLane(id, info[0])
+  for info in vars.laneConnections[id][lid][int(di)]:
+    queue.append({"id": info[0], 'lid': info[1], "di": info[2], "step": 0})
+    print("here")
 
   while len(queue) > 0:
     item = queue.popleft()
     id = item['id']
+    lid = item['lid']
     di = item['di']
     step = item['step']
 
     if sameHdg:
-      for road in vars.root.iter('road'):
-        if get(road, 'id') == id:
-          planView = road.find('planView')
-          for geometry in planView.iter('geometry'):
-            newHdg = get(geometry, 'hdg')
-            angle = (newHdg-hdg)%(2*math.pi)
-            if angle > math.pi/4 and angle < math.pi/4*3 or angle > math.pi/4*5 and angle < math.pi/4*7:
-              step = maxStep
-              break
-          break
+      angle0 = (vars.hdgs[id][0]-hdg)%(2*math.pi)
+      angle1 = (vars.hdgs[id][1]-hdg)%(2*math.pi)
+      m1, m2, m3, m4 = math.pi/4, math.pi/4*3, math.pi/4*5, math.pi/4*7
+      if angle0 > m1 and angle0 < m2 or angle0 > m3 and angle0 < m4:
+        step = maxStep
+      elif angle1 > m1 and angle1 < m2 or angle1 > m3 and angle1 < m4:
+        step = maxStep
 
     if step < maxStep:
-      match vars.edits[id]:
+      match vars.laneEdits[id][lid]:
         case cons.NOT_EDITED | cons.TAIL_EDITED | cons.HEAD_EDITED:
-          vars.edits[id] = cons.BOTH_EDITED
-          for info in vars.connectSets[id]:
-            queue.append({"id": info[0], "di": info[2], "step": step+1})
-            vars.laneEdits[info[0]] = searchLane(id, info[0])
+          vars.laneEdits[id][lid] = cons.BOTH_EDITED
+          for info in vars.laneConnections[id][lid][0]:
+            queue.append({"id": info[0], "lid": info[1], "di": info[2], "step": step+1})
+          for info in vars.laneConnections[id][lid][1]:
+            queue.append({"id": info[0], "lid": info[1], "di": info[2], "step": step+1})
         case _:
           continue
     
     elif step == maxStep and not di:
-      match vars.edits[id]:
+      match vars.laneEdits[id][lid]:
         case cons.NOT_EDITED:
-          vars.edits[id] = cons.TAIL_EDITED
+          vars.laneEdits[id][lid] = cons.TAIL_EDITED
         case cons.HEAD_EDITED:
-          vars.edits[id] = cons.BOTH_EDITED
+          vars.laneEdits[id][lid] = cons.BOTH_EDITED
         case _:
           continue
-      for info in vars.connectSets[id]:
-        if info[1] == cons.TAIL:
-          queue.append({"id": info[0], "di": info[2], "step": step})
-          vars.laneEdits[info[0]] = searchLane(id, info[0])
+      for info in vars.laneConnections[id][lid][int(cons.TAIL)]:
+        queue.append({"id": info[0], "lid": info[1], "di": info[2], "step": step})
     elif step == maxStep and di:
-      match vars.edits[id]:
+      match vars.laneEdits[id][lid]:
         case cons.NOT_EDITED:
-          vars.edits[id] = cons.HEAD_EDITED
+          vars.laneEdits[id][lid] = cons.HEAD_EDITED
         case cons.TAIL_EDITED:
-          vars.edits[id] = cons.BOTH_EDITED
+          vars.laneEdits[id][lid] = cons.BOTH_EDITED
         case _:
           continue
-      for info in vars.connectSets[id]:
-        if info[1] == cons.HEAD:
-          queue.append({"id": info[0], "di": info[2], "step": step})
-          vars.laneEdits[info[0]] = searchLane(id, info[0])
-
-def searchLane(id1, id2):
-  ans = []
-  for i in vars.laneEdits[id1]:
-    x = vars.laneMap[str(id1)+" "+str(id2)+" "+str(i)]
-    ans.append(int(x))
-  return ans
+      for info in vars.laneConnections[id][lid][int(cons.HEAD)]:
+        queue.append({"id": info[0], "lid": info[1], "di": info[2], "step": step})
 
 '''
 def  changeRoadWidth(id, value, mode='add', smooth=False, infos=[]):

@@ -29,7 +29,6 @@ def getParams(gs):
     x1 += x_*math.cos(hdg1)-y_*math.sin(hdg1)
     y1 += y_*math.sin(hdg1)+y_*math.cos(hdg1)
     h1 = (hdg1+math.atan((bV+2*cV+3*dV)/(bU+2*cU+3*dU)))%(2*numpy.pi)
-    print(h1)
 
   return [x1, y1, h0, h1]
 

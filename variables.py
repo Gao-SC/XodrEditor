@@ -23,12 +23,15 @@ def updateRoot(new_val):
     global root
     root = new_val
 
-connectSets = [[] for _ in range(1000)]
-laneMap = {}
+roadConnections = {}
+laneConnections = {}
 
-edits = numpy.zeros(1000)
-laneEdits = [[] for _ in range(1000)]
+roadEdits = {}
+laneEdits = {}
+roadBackup = {}
+laneBackup = {}
 
+hdgs = {}
 
 saveName = 'test'
 openPath = None
