@@ -18,3 +18,5 @@ class cons:
 
 get = lambda a, b :float(a.get(b))
 set = lambda a, b, c :a.set(b, str(c))
+
+MAX_DEVIATION = 0.02

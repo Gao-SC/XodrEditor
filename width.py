@@ -52,8 +52,8 @@ def changeRoadsWidth(id, value, smooth=0, maxStep=0, sameHdg=0, laneIds=[]):
   vars.laneEdits = copy.deepcopy(vars.laneBackup)
   # TODO if mode == 'mul':
   if laneIds == []:
-    for lid, info in vars.laneEdits[id].items():
-      info = cons.BOTH_EDITED
+    for lid in vars.laneEdits[id].keys():
+      vars.laneEdits[id][lid] = cons.BOTH_EDITED
       setChange(id, lid, cons.TAIL, maxStep, sameHdg, vars.hdgs[id][0])
       setChange(id, lid, cons.HEAD, maxStep, sameHdg, vars.hdgs[id][1])
     value = value/len(vars.laneEdits[id].values())

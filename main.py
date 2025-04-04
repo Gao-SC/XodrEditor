@@ -9,12 +9,13 @@ from curvature import *
 PATH = "D:\\Users\\cling\\Documents\\Homework\\Codes\\xodr_project\\test\\"
 
 def write():
-    vars.trees[-1].write(PATH+vars.saveName+".xodr", encoding="utf-8", xml_declaration=True)
+    vars.trees[-1].write(PATH+vars.saveName+"_test.xodr", encoding="utf-8", xml_declaration=True)
     print('Already saved.')
 
 def open(name):
+    vars.saveName = name
     vars.clearTrees()
-    vars.updateTrees(ET.parse(PATH+'OpenSCENARIO\\'+name+".xodr"))
+    vars.updateTrees(ET.parse(PATH+'selected_map\\'+name+".xodr"))
     vars.updateRoot(vars.trees[-1].getroot())
     vars.roadConnections = {}
     vars.laneConnections = {}
