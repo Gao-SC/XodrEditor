@@ -7,11 +7,8 @@ from scipy.optimize import root_scalar
 import variables as vars
 from constants import *
 
-def fit_constrained_curve(gs, params, MAX_DEVIATION):
-  x0, y0, x1, y1, dx0, dy0, dx1, dy1, euc_dis = params
-  x_data, y_data, h_data = getMidData(gs, x0, y0, x1, y1)
-  print(len(x_data), len(y_data), len(h_data), len(gs))
-
+def fit_constrained_curve(x_data, y_data, h_data, params, MAX_DEVIATION):
+  x1, y1, dx0, dy0, dx1, dy1, euc_dis = params
   ## 初始化
   def compute_initial_t(x, y):
     dx = numpy.diff(x)
@@ -62,21 +59,21 @@ def fit_constrained_curve(gs, params, MAX_DEVIATION):
     l1 = math.sqrt((bX/3+cX/3*2+dX)**2+(bY/3+cY/3*2+dY)**2)
     ans.append([x1, y1, l0, l1, math.atan2(dy0, dx0), math.atan2(dy1, dx1)])
   else:
-    print("bad", index, max, size, len(gs))
-    gs0, gs1 = gs[:index+1], gs[index+1:]
-    x00, x01 = x0,            x0+x_data[index]
+    print("bad", index, max, size)
+    x_data0, x_data1 = x_data[:index], x_data[index+1:]-x_data[index]
+    y_data0, y_data1 = y_data[:index], y_data[index+1:]-y_data[index]
+    h_data0, h_data1 = h_data[:index], h_data[index+1:]
     x10, x11 = x_data[index], x1-x_data[index]
-    y00, y01 = y0,            y0+y_data[index]
     y10, y11 = y_data[index], y1-y_data[index]
     dx2, dy2 = hdgToDxDy(h_data[index])
-    params0 = [x00, y00, x10, y10, dx0, dy0, dx2, dy2, euc_dis]
-    params1 = [x01, y01, x11, y11, dx2, dy2, dx1, dy1, euc_dis]
-    ans.extend(fit_constrained_curve(gs0, params0, MAX_DEVIATION))
-    ans.extend(fit_constrained_curve(gs1, params1, MAX_DEVIATION))
+    params0 = [x10, y10, dx0, dy0, dx2, dy2, euc_dis]
+    params1 = [x11, y11, dx2, dy2, dx1, dy1, euc_dis]
+    ans.extend(fit_constrained_curve(x_data0, y_data0, h_data0, params0, MAX_DEVIATION))
+    ans.extend(fit_constrained_curve(x_data1, y_data1, h_data1, params1, MAX_DEVIATION))
   
   return ans
 
-def solveInitialCurve(gs, MAX_DEVIATION):
+def solveInitialCurve(gs, maxDeviation, step):
   g0, g1 = gs[0], gs[-1]
   h0, h1 = getHdg(g0, 0)  ,  getHdg(g1, 1)
   x0, y0 = get(g0, 'x')   ,  get(g0, 'y')
@@ -96,39 +93,13 @@ def solveInitialCurve(gs, MAX_DEVIATION):
 
   dx0, dy0 = hdgToDxDy(h0)
   dx1, dy1 = hdgToDxDy(h1)
-  params = [x0, y0, x1, y1, dx0, dy0, dx1, dy1, math.sqrt(x1**2+y1**2)]
-  ans = fit_constrained_curve(gs, params, MAX_DEVIATION)
+  x_data, y_data, h_data = getMidData(gs, x0, y0, step)
+  print(x_data)
+  params = [x1, y1, dx0, dy0, dx1, dy1, math.sqrt(x1**2+y1**2)]
+  ans = fit_constrained_curve(x_data, y_data, h_data, params, maxDeviation)
   return ans
 
-# TODO
-def getMidData(gs, x0, y0, x1, y1):
-  xs, ys, hdgs = [], [], []
-  for i in range(len(gs)):
-    if i == 0:
-      continue
-    xs.append(get(gs[i], 'x')-x0)
-    ys.append(get(gs[i], 'y')-y0)
-    hdgs.append(getHdg(gs[i], 0))
-  if xs == []:
-    poly = gs[0].find('paramPoly3')
-    if poly != None:
-      bU, cU, dU = get(poly, 'bU'), get(poly, 'cU'), get(poly, 'dU')
-      bV, cV, dV = get(poly, 'bV'), get(poly, 'cV'), get(poly, 'dV')
-      x_1, y_1 = bU/4+cU/16+dU/64,        bV/4+cV/16+dV/64
-      x_2, y_2 = bU/2+cU/4+dU/8          ,bV/2+cV/4+dV/8
-      x_3, y_3 = bU/4*3+cU/16*9+dU/64*27 ,bV/4*3+cV/16*9+dV/64*27
-      xs.extend([x_1, x_2, x_3])
-      ys.extend([y_1, y_2, y_3])
-      hdgs.extend([]) # THIS WON'T BE USED
-    else:
-      xs.append(x1/2)
-      ys.append(y1/2)
-  return numpy.array(xs), numpy.array(ys), numpy.array(hdgs)
-
-
-
-def find_t(param, l, tol=1e-8):
-  bU, cU, dU, bV, cV, dV = param
+def find_pos(bU, cU, dU, bV, cV, dV, l, tol=1e-8):
   def integrand(t):
     du = bU+2*cU*t+3*dU*t**2
     dv = bV+2*cV*t+3*dV*t**2
@@ -137,7 +108,42 @@ def find_t(param, l, tol=1e-8):
       current_length, _ = quad(integrand, 0, t, epsabs=tol, epsrel=tol)
       return current_length-l
   sol = root_scalar(objective, bracket=[0.0, 1.0], method='bisect', xtol=tol)
-  return sol.root
+  t = sol.root
+  x = bU*t+cU*t**2+dU*t**3
+  y = bV*t+cV*t**2+dV*t**3
+  h = math.atan2(bV+2*cV*t+3*dV*t**2, bU+2*cU*t+3*dU*t**2)
+  return x, y, h
+
+def getMidData(gs, x0, y0, step):
+  xs, ys, hs = [], [], []
+  position = step
+
+  for g in gs:
+    length = get(g, 'length')
+    x = get(g, 'x')-x0
+    y = get(g, 'y')-y0
+    h = getHdg(g, 0)
+
+    poly = g.find('paramPoly3')
+    if poly != None:
+      while length > position:
+        bU, cU, dU = get(poly, 'bU'), get(poly, 'cU'), get(poly, 'dU')
+        bV, cV, dV = get(poly, 'bV'), get(poly, 'cV'), get(poly, 'dV')
+        dx, dy, dh = find_pos(bU, cU, dU, bV, cV, dV, position)
+        xs.append(x+dx*math.cos(h)-dy*math.sin(h))
+        ys.append(y+dx*math.sin(h)+dy*math.cos(h))
+        hs.append((h+dh)%(2*math.pi))
+        position += step
+    else:
+      while length > position:
+        dx = position*math.cos(h)
+        dy = position*math.sin(h)
+        xs.append(x+dx)
+        ys.append(y+dy)
+        hs.append(h)
+        position += step
+    position -= length
+  return numpy.array(xs), numpy.array(ys), numpy.array(hs)
 
 def getLength(param):
   bU, cU, dU, bV, cV, dV = param
@@ -168,12 +174,12 @@ def rectifyRoadData(road, length_new):
     set(width, 'c', get(width, 'c')/(k_l**2))
     set(width, 'd', get(width, 'd')/(k_l**3))
 
-def initRoadArc(id, md=0.02):
+def initRoadArc(id, md, st):
   for road in vars.root.iter('road'):
     if road.get('id') == id:
       planView = road.find('planView')
       gs = planView.findall('geometry')
-      params = solveInitialCurve(gs, md)
+      params = solveInitialCurve(gs, md, st)
       ## 计算道路方程
       planView.clear()
       length = 0

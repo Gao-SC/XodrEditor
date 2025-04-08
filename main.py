@@ -186,17 +186,19 @@ if __name__ == '__main__':
                     pushNewTree()
                     id = None
                     md = 0.02
+                    st = 2.0
                     for i in range(1, len(command)):
                         param = command[i].split('=')
                         match param[0]:
                             case 'id': id = param[1]
-                            case 'md': v0 = float(param[1])
+                            case 'md': md = float(param[1])
+                            case 'st': st = float(param[1])
                             case _: print("Illegal parameter!")
 
                     if id == None:
                         print("Illegal command! Required parameter missing.")
                         continue
-                    initRoadArc(id=id, md=md)
+                    initRoadArc(id=id, md=md, st=st)
 
                 case "curve":
                     pushNewTree()
