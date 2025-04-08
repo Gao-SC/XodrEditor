@@ -34,14 +34,14 @@ def fit_constrained_curve(x_data, y_data, h_data, params, MAX_DEVIATION):
     return numpy.concatenate([x_data-x_pred, y_data-y_pred])
   
   n_points = len(x_data)
-  lower = [-numpy.inf, -numpy.inf]+[0]*n_points
-  upper = [ numpy.inf,  numpy.inf]+[1]*n_points
+  lower = [0        ,         0]+[0]*n_points
+  upper = [numpy.inf, numpy.inf]+[1]*n_points
   result = least_squares(residuals, initial_guess, bounds=(lower, upper))
   ## 计算结果
   ans = []
   size = int(len(result.fun)/2)
   index, max = -1, MAX_DEVIATION
-  for i in range(1, size-1):
+  for i in range(2, size-2):
     delta = math.sqrt(result.fun[i]**2+result.fun[i+size]**2)/euc_dis
     if max < delta:
       max = delta
@@ -75,10 +75,15 @@ def fit_constrained_curve(x_data, y_data, h_data, params, MAX_DEVIATION):
 
 def solveInitialCurve(gs, maxDeviation, step):
   g0, g1 = gs[0], gs[-1]
-  h0, h1 = getHdg(g0, 0)  ,  getHdg(g1, 1)
+  h0, h1 = get(g0, 'hdg'),   get(g1, 'hdg')
+  print(h0, h1)
   x0, y0 = get(g0, 'x')   ,  get(g0, 'y')
   x1, y1 = get(g1, 'x')-x0,  get(g1, 'y')-y0
 
+  poly = g0.find('paramPoly3')
+  if poly != None:
+    bU, bV = get(poly, 'bU'), get(poly, 'bV')
+    h0 = (h0+math.atan2(bV, bU))%(2*math.pi)
   line = g1.find('line')
   if line != None:
     x1 += get(g1, 'length')*math.cos(h1)
@@ -90,11 +95,13 @@ def solveInitialCurve(gs, maxDeviation, step):
     x_, y_ = bU+cU+dU, bV+cV+dV
     x1 += x_*math.cos(h1)-y_*math.sin(h1)
     y1 += x_*math.sin(h1)+y_*math.cos(h1)
+    h1 = (h1+math.atan2(bV+2*cV+3*dV, bU+2*cU+3*dU))%(2*math.pi)
 
+  print(h0, h1)
   dx0, dy0 = hdgToDxDy(h0)
   dx1, dy1 = hdgToDxDy(h1)
   x_data, y_data, h_data = getMidData(gs, x0, y0, step)
-  print(x_data)
+
   params = [x1, y1, dx0, dy0, dx1, dy1, math.sqrt(x1**2+y1**2)]
   ans = fit_constrained_curve(x_data, y_data, h_data, params, maxDeviation)
   return ans
@@ -122,7 +129,7 @@ def getMidData(gs, x0, y0, step):
     length = get(g, 'length')
     x = get(g, 'x')-x0
     y = get(g, 'y')-y0
-    h = getHdg(g, 0)
+    h = get(g, 'hdg')
 
     poly = g.find('paramPoly3')
     if poly != None:
@@ -140,7 +147,7 @@ def getMidData(gs, x0, y0, step):
         dy = position*math.sin(h)
         xs.append(x+dx)
         ys.append(y+dy)
-        hs.append(h)
+        hs.append(h%(2*math.pi))
         position += step
     position -= length
   return numpy.array(xs), numpy.array(ys), numpy.array(hs)
@@ -218,8 +225,8 @@ def bezierToParam(param):
   return bU, cU, dU, bV, cV, dV
 
 def getGBezier(g):
-  x, y, l0, l1 = 0, 0, 1, 1
-  h0, h1 = getHdg(g, 0), getHdg(g, 1)
+  x, y, l0, l1, h0, h1 = 0, 0, 1, 1
+  h0, h1 = get(g, 'hdg'), get(g, 'hdg')
   line = g.find('line')
   if line != None:
     x = get(g, 'length')*math.cos(h0)
@@ -231,10 +238,12 @@ def getGBezier(g):
     x_, y_ = bU+cU+dU, bV+cV+dV
     x = x_*math.cos(h0)-y_*math.sin(h0)
     y = x_*math.sin(h0)+y_*math.cos(h0)
+    h1 = (h1+math.atan2(bV+2*cV+3*dV, bU+2*cU+3*dU))%(2*math.pi)
     l0 = math.sqrt((bU/3          )**2+(bV/3)          **2)
     l1 = math.sqrt((bU/3+cU/3*2+dU)**2+(bV/3+cV/3*2+dV)**2)
   return x, y, l0, l1, h0, h1
 
+## TODO
 ## 拟合圆弧时，v0=v1=cos(theta/2)/(3*cos^2(theta/4))
 def editRoadArc(id, v0, v1, h0, h1, gi):
   for road in vars.root.iter('road'):
