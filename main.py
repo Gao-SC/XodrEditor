@@ -1,6 +1,6 @@
 import xml.etree.ElementTree as ET
 import variables as vars
-
+import sys
 from constants import *
 from width import *
 from elevation import *
@@ -156,7 +156,7 @@ if __name__ == '__main__':
                     if id == None or v == None:
                         print("Illegal command! Required parameter missing.")
                         continue
-                    changeRoadsWidth(id=id, value=v, smooth=s, maxStep=ms, sameHdg=sh, laneIds=li)
+                    editRoadWidth(id=id, value=v, smooth=s, maxStep=ms, sameHdg=sh, laneIds=li)
 
                 case "slope":
                     pushNewTree()
@@ -180,7 +180,23 @@ if __name__ == '__main__':
                     if id == None or v == None:
                         print("Illegal command! Required parameter missing.")
                         continue
-                    changeRoadsSlope(id=id, value=v, mode=m, move=mv, maxStep=ms, sameHdg=sh)
+                    editRoadSlope(id=id, value=v, mode=m, move=mv, maxStep=ms, sameHdg=sh)
+
+                case "fit":
+                    pushNewTree()
+                    id = None
+                    md = 0.02
+                    for i in range(1, len(command)):
+                        param = command[i].split('=')
+                        match param[0]:
+                            case 'id': id = param[1]
+                            case 'md': v0 = float(param[1])
+                            case _: print("Illegal parameter!")
+
+                    if id == None:
+                        print("Illegal command! Required parameter missing.")
+                        continue
+                    initRoadArc(id=id, md=md)
 
                 case "curve":
                     pushNewTree()
@@ -189,6 +205,7 @@ if __name__ == '__main__':
                     v1 = 0
                     h0 = 0
                     h1 = 0
+                    gi = 0
                     for i in range(1, len(command)):
                         param = command[i].split('=')
                         match param[0]:
@@ -197,12 +214,13 @@ if __name__ == '__main__':
                             case 'v1': v1 = float(param[1])
                             case 'h0': h0 = float(param[1])
                             case 'h1': h1 = float(param[1])
+                            case 'gi': md = int(param[1])
                             case _: print("Illegal parameter!")
 
                     if id == None:
                         print("Illegal command! Required parameter missing.")
                         continue
-                    changeRoadArc(id=id, v0=v0, v1=v1, h0=h0, h1=h1)
+                    editRoadArc(id=id, v0=v0, v1=v1, h0=h0, h1=h1, gi=gi)
             
                     
 

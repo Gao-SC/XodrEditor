@@ -4,7 +4,7 @@ import variables as vars
 from collections import deque
 from constants import *
 
-def changeRoadsSlope(id, value, mode, move, maxStep=0, sameHdg=0, new = True):
+def editRoadSlope(id, value, mode, move, maxStep=0, sameHdg=0, new = True):
   if mode == 'mul' and move == cons.MOVE_BOTH:
     print('Params error!')
     return
@@ -76,13 +76,13 @@ def changeRoadsSlope(id, value, mode, move, maxStep=0, sameHdg=0, new = True):
         num = vars.roadEdits[newId]
         if num == cons.TAIL_EDITED or num == cons.TAIL_EDITED2:   # change tail
           print("move tail" + newId)
-          changeRoadsSlope(newId, eleva, 'add', cons.MOVE_TAIL, new=False)
+          editRoadSlope(newId, eleva, 'add', cons.MOVE_TAIL, new=False)
         elif num == cons.HEAD_EDITED or num == cons.HEAD_EDITED2: # change head
           print("move head" + newId)
-          changeRoadsSlope(newId, eleva, 'add', cons.MOVE_HEAD, new=False)
+          editRoadSlope(newId, eleva, 'add', cons.MOVE_HEAD, new=False)
         elif num == cons.BOTH_EDITED:                             # change both
           print("move both" + newId)
-          changeRoadsSlope(newId, eleva, 'add', cons.MOVE_BOTH, new=False)
+          editRoadSlope(newId, eleva, 'add', cons.MOVE_BOTH, new=False)
 
       return
 
