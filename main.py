@@ -13,10 +13,20 @@ def write():
     print('Already saved.')
 
 def open(name):
+    tree = None 
+    try:
+        tree = ET.parse(PATH+'selected_map\\'+name+".xodr")
+    except Exception:
+        print("File not found!")
+        return False
     vars.saveName = name
     vars.clearTrees()
-    vars.updateTrees(ET.parse(PATH+'selected_map\\'+name+".xodr"))
+    vars.updateTrees(tree)
     vars.updateRoot(vars.trees[-1].getroot())
+    updateData()
+    return True
+
+def updateData():
     vars.roadConnections = {}
     vars.laneConnections = {}
     jSets = {}
@@ -112,11 +122,14 @@ def pushNewTree():
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
+    plt.ion()
     while True:
         openPath = input("Enter the xodr file path here: ")
         if openPath == 'exit':
+            plt.ioff()
             break
-        open(openPath)
+        if open(openPath) == False:
+            continue
 
         while True:
             command = input().split()
@@ -185,8 +198,8 @@ if __name__ == '__main__':
                 case "fit":
                     pushNewTree()
                     id = None
-                    md = 0.02
-                    st = 2.0
+                    md = 0.01
+                    st = 1.0
                     for i in range(1, len(command)):
                         param = command[i].split('=')
                         match param[0]:
@@ -216,7 +229,7 @@ if __name__ == '__main__':
                             case 'v1': v1 = float(param[1])
                             case 'h0': h0 = float(param[1])
                             case 'h1': h1 = float(param[1])
-                            case 'gi': md = int(param[1])
+                            case 'gi': gi = int(param[1])
                             case _: print("Illegal parameter!")
 
                     if id == None:

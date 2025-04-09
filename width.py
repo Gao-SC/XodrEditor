@@ -1,5 +1,4 @@
 import xml.etree.ElementTree as ET
-import math
 import variables as vars
 from constants import *
 from collections import deque
