@@ -1,5 +1,4 @@
 import xml.etree.ElementTree as ET
-from scipy.integrate import quad
 from scipy.optimize import least_squares
 from scipy.optimize import root_scalar
 import odrparser as odr
@@ -63,7 +62,7 @@ def fit_constrained_curve(x_data, y_data, h_data, params, MAX_DEVIATION):
     h_data0, h_data1 = h_data[:index], h_data[index+1:]
     x10, x11 = x_data[index], x1-x_data[index]
     y10, y11 = y_data[index], y1-y_data[index]
-    dx2, dy2 = hdgToDxDy(h_data[index])
+    dx2, dy2 = math.cos(h_data[index]), math.sin(h_data[index])
     params0 = [x10, y10, dx0, dy0, dx2, dy2, euc_dis]
     params1 = [x11, y11, dx2, dy2, dx1, dy1, euc_dis]
     ans.extend(fit_constrained_curve(x_data0, y_data0, h_data0, params0, MAX_DEVIATION))
@@ -94,8 +93,8 @@ def solveInitialCurve(gs, maxDeviation, step):
     y1 += x_*math.sin(h1)+y_*math.cos(h1)
     h1 = (h1+math.atan2(bV+2*cV+3*dV, bU+2*cU+3*dU))%(2*math.pi)
 
-  dx0, dy0 = hdgToDxDy(h0)
-  dx1, dy1 = hdgToDxDy(h1)
+  dx0, dy0 = math.cos(h0), math.sin(h0)
+  dx1, dy1 = math.cos(h1), math.sin(h1)
   x_data, y_data, h_data = getMidData(gs, x0, y0, step)
 
   params = [x1, y1, dx0, dy0, dx1, dy1, math.sqrt(x1**2+y1**2)]
@@ -147,15 +146,6 @@ def getMidData(gs, x0, y0, step):
         position += step
     position -= length
   return numpy.array(xs), numpy.array(ys), numpy.array(hs)
-
-def getLength(param):
-  bU, cU, dU, bV, cV, dV = param
-  def integrand(p):
-    du = bU+2*cU*p+3*dU*p**2
-    dv = bV+2*cV*p+3*dV*p**2
-    return numpy.sqrt(du**2+dv**2)
-  length, _ = quad(integrand, 0, 1)
-  return length
 
 def rectifyRoadData(road, length_new):
   length = get(road, "length")
@@ -217,7 +207,7 @@ def initRoadArc(id, md, st):
   params = []
   for bezier in beziers:
     param = bezierToParam(bezier)
-    l = getLength(param)
+    l = getLength(param, 1)
     param.append(x-get(gs[0], 'x'))
     param.append(y-get(gs[0], 'y'))
     params.append(param)
@@ -276,7 +266,7 @@ def editRoadArc(id, v0, v1, h0, h1, gi):
 
     x, y = get(gs[i], 'x'), get(gs[i], 'y')
     param = bezierToParam(bezier)
-    l = getLength(param)
+    l = getLength(param, 1)
     param.append(x-get(gs[0], 'x'))
     param.append(y-get(gs[0], 'y'))
     params.append(param)

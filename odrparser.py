@@ -49,7 +49,19 @@ def open(name):
   updateTrees(tree)
   updateRoot(trees[-1].getroot())
   updateData()
+  readJson(name)
   return True
+
+selectedRoad = []
+
+def readJson(name):
+  selectedRoad.clear()
+  try:
+    json = ET.parse(PATH+'selected_map\\'+name+".json")
+    print(json)
+  except Exception:
+    print("File not found!")
+    return False
 
 def updateData():
   clearAll()

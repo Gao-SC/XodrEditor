@@ -3,6 +3,7 @@ from constants import *
 from width import *
 from elevation import *
 from curvature import *
+from detector import *
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
@@ -16,6 +17,8 @@ if __name__ == '__main__':
             continue
 
         while True:
+            findRoad(2.69, -1.82)
+            findRoad(-5.74, -0.76)
             command = input().split()
             match command[0]:
                 case "save":
