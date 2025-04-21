@@ -4,6 +4,119 @@ from scipy.optimize import root_scalar
 import odrparser as odr
 from constants import *
 
+def initRoadArc(id, md, st):
+  road = odr.roads[id]
+  planView = road.find('planView')
+  gs = planView.findall('geometry')
+  beziers = solveInitialCurve(gs, md, st)
+  ## 计算道路方程
+  planView.clear()
+  length = 0
+  x, y = getData(gs[0], 'x'), getData(gs[0], 'y')
+  params = []
+  for bezier in beziers:
+    param = bezierToParam(bezier)
+    l = getLength(param, 1)
+    param.append(x-getData(gs[0], 'x'))
+    param.append(y-getData(gs[0], 'y'))
+    params.append(param)
+
+    g = ET.Element('geometry')
+    setData(g, 's', length)
+    setData(g, 'x', x)
+    setData(g, 'y', y)
+    setData(g, 'hdg', 0)
+    setData(g, 'length', l)
+    poly = ET.Element('paramPoly3')
+    setData(poly, 'aU', 0)
+    setData(poly, 'bU', param[0])
+    setData(poly, 'cU', param[1])
+    setData(poly, 'dU', param[2])
+    setData(poly, 'aV', 0)
+    setData(poly, 'bV', param[3])
+    setData(poly, 'cV', param[4])
+    setData(poly, 'dV', param[5])
+    length += l
+    x += bezier[0]
+    y += bezier[1]
+    g.append(poly)
+    planView.append(g)
+
+  showCurve(params)
+  rectifyRoadData(road, length)
+
+## 拟合圆弧时，v0=v1=cos(theta/2)/(3*cos^2(theta/4))
+def editRoadArc(id, x0, y0, v0, h0, x1, y1, v1, h1, gi):
+  road = odr.roads[id]
+  planView = road.find('planView')
+  gs = planView.findall('geometry')
+  if gi >= len(gs):
+    print("ERROR, out of range!")
+    return
+  
+  params = []
+  ## 计算道路方程
+  length_new = 0
+  edit0 = x0 != 0 or y0 != 0 or h0 != 0
+  edit1 = x1 != 0 or y1 != 0 or h1 != 0
+  for i in range(len(gs)):
+    bezier = getGBezier(gs[i])
+    judge = i == gi-1 and edit0 or i == gi or i == gi+1 and edit1
+    deltaX, deltaY = 0, 0
+    if judge:
+      if i == gi-1 and h0 != 0:
+        bezier[0] += x0*euc_dis
+        bezier[1] += y0*euc_dis
+        bezier[5] += h0
+      elif i == gi:
+        euc_dis = math.sqrt(bezier[0]**2+bezier[1]**2)
+        deltaX, deltaY = x0*euc_dis, y0*euc_dis
+        bezier[0] += (x1-x0)*euc_dis
+        bezier[1] += (y1-y0)*euc_dis
+        bezier[2] += v0*euc_dis
+        bezier[3] += v1*euc_dis
+        bezier[4] += h0
+        bezier[5] += h1
+      else:
+        deltaX, deltaY = x1*euc_dis, y1*euc_dis
+        bezier[0] -= x1*euc_dis
+        bezier[1] -= y1*euc_dis
+        bezier[4] += h1
+
+    x = getData(gs[i], 'x')+deltaX
+    y = getData(gs[i], 'y')+deltaY
+    param = bezierToParam(bezier)
+    l = getLength(param, 1)
+    param.append(x-getData(gs[0], 'x'))
+    param.append(y-getData(gs[0], 'y'))
+    params.append(param)
+    
+    if judge:
+      gs[i].clear()
+      setData(gs[i], 's', length_new)
+      setData(gs[i], 'x', x)
+      setData(gs[i], 'y', y)
+      setData(gs[i], 'hdg', 0)
+      setData(gs[i], 'length', l)
+      poly = ET.Element('paramPoly3')
+      setData(poly, 'aU', 0)
+      setData(poly, 'bU', param[0])
+      setData(poly, 'cU', param[1])
+      setData(poly, 'dU', param[2])
+      setData(poly, 'aV', 0)
+      setData(poly, 'bV', param[3])
+      setData(poly, 'cV', param[4])
+      setData(poly, 'dV', param[5])
+      gs[i].append(poly)
+    elif i >= gi+1:
+      setData(gs[i], 's', length_new)
+    length_new += l
+
+  showCurve(params)
+  rectifyRoadData(road, length_new)
+
+## PRIVATE METHODS
+
 def fit_constrained_curve(x_data, y_data, h_data, params, MAX_DEVIATION):
   x1, y1, dx0, dy0, dx1, dy1, euc_dis = params
   ## 初始化
@@ -194,105 +307,3 @@ def getGBezier(g):
     l0 = math.sqrt((bU/3          )**2+(bV/3)          **2)
     l1 = math.sqrt((bU/3+cU/3*2+dU)**2+(bV/3+cV/3*2+dV)**2)
   return [x, y, l0, l1, h0, h1]
-
-def initRoadArc(id, md, st):
-  road = odr.roads[id]
-  planView = road.find('planView')
-  gs = planView.findall('geometry')
-  beziers = solveInitialCurve(gs, md, st)
-  ## 计算道路方程
-  planView.clear()
-  length = 0
-  x, y = getData(gs[0], 'x'), getData(gs[0], 'y')
-  params = []
-  for bezier in beziers:
-    param = bezierToParam(bezier)
-    l = getLength(param, 1)
-    param.append(x-getData(gs[0], 'x'))
-    param.append(y-getData(gs[0], 'y'))
-    params.append(param)
-
-    g = ET.Element('geometry')
-    setData(g, 's', length)
-    setData(g, 'x', x)
-    setData(g, 'y', y)
-    setData(g, 'hdg', 0)
-    setData(g, 'length', l)
-    poly = ET.Element('paramPoly3')
-    setData(poly, 'aU', 0)
-    setData(poly, 'bU', param[0])
-    setData(poly, 'cU', param[1])
-    setData(poly, 'dU', param[2])
-    setData(poly, 'aV', 0)
-    setData(poly, 'bV', param[3])
-    setData(poly, 'cV', param[4])
-    setData(poly, 'dV', param[5])
-    length += l
-    x += bezier[0]
-    y += bezier[1]
-    g.append(poly)
-    planView.append(g)
-
-  showCurve(params)
-  rectifyRoadData(road, length)
-
-## 拟合圆弧时，v0=v1=cos(theta/2)/(3*cos^2(theta/4))
-def editRoadArc(id, v0, v1, h0, h1, gi):
-  road = odr.roads[id]
-  planView = road.find('planView')
-  gs = planView.findall('geometry')
-  if gi >= len(gs):
-    print("ERROR, out of range!")
-    return
-  
-  params = []
-  ## 计算道路方程
-  length_new = 0
-  for i in range(len(gs)):
-    bezier = getGBezier(gs[i])
-    judge = i == gi-1 and h0 != 0 or i == gi or i == gi+1 and h1 != 0
-
-    if judge:
-      if i == gi-1 and h0 != 0:
-        bezier[5] += h0
-      elif i == gi:
-        euc_dis = math.sqrt(bezier[0]**2+bezier[1]**2)
-        bezier[2] += v0*euc_dis
-        bezier[3] += v1*euc_dis
-        bezier[4] += h0
-        bezier[5] += h1
-      else:
-        bezier[4] += h1
-
-    x, y = getData(gs[i], 'x'), getData(gs[i], 'y')
-    param = bezierToParam(bezier)
-    l = getLength(param, 1)
-    param.append(x-getData(gs[0], 'x'))
-    param.append(y-getData(gs[0], 'y'))
-    params.append(param)
-    
-    if judge:
-      x, y = getData(gs[i], 'x'), getData(gs[i], 'y')
-      gs[i].clear()
-      setData(gs[i], 's', length_new)
-      setData(gs[i], 'x', x)
-      setData(gs[i], 'y', y)
-      setData(gs[i], 'hdg', 0)
-      setData(gs[i], 'length', l)
-      poly = ET.Element('paramPoly3')
-      setData(poly, 'aU', 0)
-      setData(poly, 'bU', param[0])
-      setData(poly, 'cU', param[1])
-      setData(poly, 'dU', param[2])
-      setData(poly, 'aV', 0)
-      setData(poly, 'bV', param[3])
-      setData(poly, 'cV', param[4])
-      setData(poly, 'dV', param[5])
-      gs[i].append(poly)
-    elif i >= gi+1:
-      setData(gs[i], 's', length_new)
-    length_new += l
-
-  showCurve(params)
-  rectifyRoadData(road, length_new)
-  return

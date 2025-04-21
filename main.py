@@ -15,8 +15,6 @@ if __name__ == '__main__':
             break
         if odr.openXodr(openPath) == False:
             continue
-        else:
-            readJson(openPath)
 
         test, command = False, None
         while True:
@@ -35,6 +33,12 @@ if __name__ == '__main__':
                     odr.redoTrees()
                 case "saveName":
                     odr.saveName = command[1]
+                case "test":
+                    readJson(openPath)
+                    for id in odr.roads.keys():
+                        initRoadArc(id=id, md=0.01, st=1.0)
+                    command = testModify()
+                    test = True
 
                 case "width":
                     odr.pushNewTree()
@@ -108,31 +112,28 @@ if __name__ == '__main__':
                 case "curve":
                     odr.pushNewTree()
                     id = None
-                    v0 = 0
-                    v1 = 0
-                    h0 = 0
-                    h1 = 0
+                    x0, y0, h0, v0 = 0, 0, 0, 0
+                    x1, y1, h1, v1 = 0, 0, 0, 0
                     gi = 0
                     for i in range(1, len(command)):
                         param = command[i].split('=')
                         match param[0]:
                             case 'id': id = param[1]
-                            case 'v0': v0 = float(param[1])
-                            case 'v1': v1 = float(param[1])
+                            case 'x0': x0 = float(param[1])
+                            case 'y0': y0 = float(param[1])
                             case 'h0': h0 = float(param[1])
+                            case 'v0': v0 = float(param[1])
+                            case 'x1': x1 = float(param[1])
+                            case 'y1': y1 = float(param[1])
                             case 'h1': h1 = float(param[1])
+                            case 'v1': v1 = float(param[1])
                             case 'gi': gi = int(param[1])
                             case _: print("Illegal parameter!")
 
                     if id == None:
                         print("Illegal command! Required parameter missing.")
                         continue
-                    editRoadArc(id=id, v0=v0, v1=v1, h0=h0, h1=h1, gi=gi)
-                case "test":
-                    for id in odr.roads.keys():
-                        initRoadArc(id=id, md=0.01, st=1.0)
-                    command = testModify()
-                    test = True
+                    editRoadArc(id=id, x0=x0, y0=y0, h0=h0, v0=v0, x1=x1, y1=y1, h1=h1, v1=v1, gi=gi)
 
                     
 

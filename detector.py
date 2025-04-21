@@ -68,7 +68,6 @@ def readJson(name):
       agents = data["agents"]
       tran = agents[0]["transform"]["position"]
       dest = agents[0]["destinationPoint"]["position"]
-      print(tran, dest)
       
       info0 = findRoad(tran["x"], tran["z"])
       info1 = findRoad(dest["x"], dest["z"])

@@ -53,4 +53,5 @@ def showCurve(params):
     u = aU+bU*t+cU*t**2+dU*t**3
     v = aV+bV*t+cV*t**2+dV*t**3
     plt.plot(u, v, color=colors[i])
+    plt.axis('equal')
   plt.show()
