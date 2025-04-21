@@ -34,10 +34,14 @@ if __name__ == '__main__':
                 case "saveName":
                     odr.saveName = command[1]
                 case "test":
-                    readJson(openPath)
-                    for id in odr.roads.keys():
-                        initRoadArc(id=id, md=0.01, st=1.0)
+                    if odr.info0 == None:
+                        readJson(openPath)
                     command = testModify()
+                    if command[0] == "curve":
+                        param = command[1].split('=')
+                        gsize = initRoadArc(id=param[1], md=0.01, st=1.0)
+                        gi = random.randint(0, gsize-1)
+                        command.append(f"gi={gi}")
                     test = True
 
                 case "width":

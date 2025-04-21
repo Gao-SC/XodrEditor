@@ -44,6 +44,7 @@ def initRoadArc(id, md, st):
 
   showCurve(params)
   rectifyRoadData(road, length)
+  return len(beziers)
 
 ## 拟合圆弧时，v0=v1=cos(theta/2)/(3*cos^2(theta/4))
 def editRoadArc(id, x0, y0, v0, h0, x1, y1, v1, h1, gi):
@@ -146,7 +147,7 @@ def fit_constrained_curve(x_data, y_data, h_data, params, MAX_DEVIATION):
   n_points = len(x_data)
   lower = [0        ,         0]+[0]*n_points
   upper = [numpy.inf, numpy.inf]+[1]*n_points
-  result = least_squares(residuals, initial_guess, bounds=(lower, upper))
+  result = least_squares(fun=residuals, x0=initial_guess, bounds=(lower, upper), max_nfev=1e3)
   ## 计算结果
   ans = []
   size = int(len(result.fun)/2)

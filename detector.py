@@ -15,22 +15,23 @@ def testModify():
   rectifyGraph(graph, odr.info0, odr.info1)
 
   # 运行Dijkstra
-  cost, path = dijkstra(graph, 'start', 'end')
+  paths = dijkstra(graph, 'start', 'end')
   candidateRoads = []
   candidateLanes = []
-  for node in path:
-    id, lid = "", ""
-    if node == "start":
-      id, lid = odr.info0[0], odr.info0[1]
-    elif node == "end":
-      id, lid = odr.info1[0], odr.info1[1]
-    else:
-      data = node.split('_')
-      id, lid = data[1], data[3]
-    if id not in candidateRoads:
-      candidateRoads.append(id)
-    if [id, lid] not in candidateLanes:
-      candidateLanes.append([id, lid])
+  for cost, path in paths:
+    for node in path:
+      id, lid = "", ""
+      if node == "start":
+        id, lid = odr.info0[0], odr.info0[1]
+      elif node == "end":
+        id, lid = odr.info1[0], odr.info1[1]
+      else:
+        data = node.split('_')
+        id, lid = data[1], data[3]
+      if id not in candidateRoads:
+        candidateRoads.append(id)
+      if [id, lid] not in candidateLanes:
+        candidateLanes.append([id, lid])
 
   method = random.randint(0, 2)
   command = ""
@@ -38,24 +39,22 @@ def testModify():
   match method:
     case 0: # width
       target = random.randint(0, len(candidateLanes)-1)
-      v = (1+1*random.random())*random.choice(list1)
       id = candidateLanes[target][0]
       li = candidateLanes[target][1]
-      command = f"width v={v} id={id} li={li} s=1 sh=1 ms={1<<30}"
+      v = (1+1*random.random())*random.choice(list1)    
+      command = f"width id={id} li={li} v={v} s=1 sh=1 ms={1<<30}".split()
     case 1: # slope
       target = random.randint(0, len(candidateRoads)-1)
+      id = candidateRoads[target]
       v = (1+1*random.random())*random.choice(list1)
       mv = random.randint(0, 2)
-      id = candidateRoads[target]
-      command = f"slope v={v} id={id} mv={mv} sh=1 ms={1<<30}"
+      command = f"slope id={id} v={v} mv={mv} sh=1 ms={1<<30}".split()
     case 2: # curve
       target = random.randint(0, len(candidateRoads)-1)
+      id = candidateRoads[target]
       v0 = (0.2+0.2*random.random())*random.choice(list1)
       v1 = (0.2+0.2*random.random())*random.choice(list1)
-      id = candidateRoads[target]
-      gsize = len(odr.roads[id].find("planView").findall("geometry"))
-      gi = random.randint(1, gsize)
-      command = f"curve v0={v0} v1={v1} id={id} gi={gsize}"
+      command = f"curve id={id} v0={v0} v1={v1}".split()
   
   print(command)
   return command
@@ -161,21 +160,33 @@ def rectifyGraph(graph, info0, info1):
     else:
       graph['end']['start'] = abs(info0[2]-info1[2])
 
-def dijkstra(graph, start_node, end_node):
-  heap = [(0, start_node, [])]
-  visited = set()
-  while heap:
-    (cost, node, path) = heapq.heappop(heap)
-    if node in visited:
+def dijkstra(graph, start, end, k=3):
+  heap = []
+  heapq.heappush(heap, (0, [start]))
+  visited = defaultdict(int)
+  paths = []
+  
+  while heap and len(paths) < k:
+    cost, path = heapq.heappop(heap)
+    current_node = path[-1]
+    
+    if current_node == end:
+      paths.append((cost, path))
       continue
-    visited.add(node)
-    path = path + [node]
-    if node == end_node:
-      return cost, path
-    for neighbor, weight in graph[node].items():
-      if neighbor not in visited:
-        heapq.heappush(heap, (cost+weight, neighbor, path))
-  return float('inf'), []
+    
+    if visited[current_node] > k*2:
+      continue
+    visited[current_node] += 1
+    
+    for neighbor, weight in graph[current_node].items():
+      if neighbor not in path:
+        new_path = list(path)
+        new_path.append(neighbor)
+        heapq.heappush(heap, (cost+weight, new_path))
+    
+    for i in range(len(paths)):
+      if i >= k or paths[i][0] > paths[0][0]*k:
+        return paths[:i]
 
 def projectPoint(road, tarX, tarY):
   gs = road.find('planView').findall('geometry')

@@ -97,6 +97,9 @@ def pushNewTree():
 # PRIVATE FUNCTION
 
 def clearAll():
+  global info0
+  global info1
+  info0, info1 = None, None
   roads.clear()
   roadConnections.clear()
   laneConnections.clear()
