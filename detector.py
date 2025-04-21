@@ -16,8 +16,49 @@ def testModify():
 
   # 运行Dijkstra
   cost, path = dijkstra(graph, 'start', 'end')
-  candidates = []
-  print(cost, path)
+  candidateRoads = []
+  candidateLanes = []
+  for node in path:
+    id, lid = "", ""
+    if node == "start":
+      id, lid = odr.info0[0], odr.info0[1]
+    elif node == "end":
+      id, lid = odr.info1[0], odr.info1[1]
+    else:
+      data = node.split('_')
+      id, lid = data[1], data[3]
+    if id not in candidateRoads:
+      candidateRoads.append(id)
+    if [id, lid] not in candidateLanes:
+      candidateLanes.append([id, lid])
+
+  method = random.randint(0, 2)
+  command = ""
+  list1 = [-1, 1]
+  match method:
+    case 0: # width
+      target = random.randint(0, len(candidateLanes)-1)
+      v = (1+1*random.random())*random.choice(list1)
+      id = candidateLanes[target][0]
+      li = candidateLanes[target][1]
+      command = f"width v={v} id={id} li={li} s=1 sh=1 ms={1<<30}"
+    case 1: # slope
+      target = random.randint(0, len(candidateRoads)-1)
+      v = (1+1*random.random())*random.choice(list1)
+      mv = random.randint(0, 2)
+      id = candidateRoads[target]
+      command = f"slope v={v} id={id} mv={mv} sh=1 ms={1<<30}"
+    case 2: # curve
+      target = random.randint(0, len(candidateRoads)-1)
+      v0 = (0.2+0.2*random.random())*random.choice(list1)
+      v1 = (0.2+0.2*random.random())*random.choice(list1)
+      id = candidateRoads[target]
+      gsize = len(odr.roads[id].find("planView").findall("geometry"))
+      gi = random.randint(1, gsize)
+      command = f"curve v0={v0} v1={v1} id={id} gi={gsize}"
+  
+  print(command)
+  return command
 
 def readJson(name):
   print("FINDING THE TARGET ROADS...")
@@ -31,6 +72,7 @@ def readJson(name):
       
       info0 = findRoad(tran["x"], tran["z"])
       info1 = findRoad(dest["x"], dest["z"])
+      print(info0, info1)
       odr.updateInfo(info0, info1)
 
   except FileNotFoundError:
@@ -67,7 +109,7 @@ def findRoad(x, y):
 def buildGRAPH():
   graph = defaultdict(dict)
   for id, road in odr.roads.items():
-    length = road.get('length')
+    length = getData(road, 'length')
     section = road.find('lanes').find('laneSection')
     for lane in section.findall('.//lane'):
       lid = lane.get('id')

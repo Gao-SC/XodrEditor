@@ -17,10 +17,14 @@ if __name__ == '__main__':
             continue
         else:
             readJson(openPath)
-            testModify()
 
+        test, command = False, None
         while True:
-            command = input().split()
+            if not test:
+                command = input().split()
+            else:
+                test = False
+
             match command[0]:
                 case "save":
                     odr.write()
@@ -124,7 +128,12 @@ if __name__ == '__main__':
                         print("Illegal command! Required parameter missing.")
                         continue
                     editRoadArc(id=id, v0=v0, v1=v1, h0=h0, h1=h1, gi=gi)
-            
+                case "test":
+                    for id in odr.roads.keys():
+                        initRoadArc(id=id, md=0.01, st=1.0)
+                    command = testModify()
+                    test = True
+
                     
 
             
