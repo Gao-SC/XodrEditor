@@ -13,7 +13,7 @@ def editRoadSlope(id, value, mode, move, maxStep=0, sameHdg=0, new = True):
   elevations = road.find('elevationProfile').findall('elevation')
   geometries = road.find('planView').findall('geometry')
   size = len(geometries)
-  length = get(road, 'length')
+  length = getData(road, 'length')
 
   if mode == 'add':
     if move == cons.MOVE_TAIL:
@@ -31,23 +31,23 @@ def editRoadSlope(id, value, mode, move, maxStep=0, sameHdg=0, new = True):
   for i in range(size):
     g = geometries[i]
     e = elevations[i]
-    s = get(g, 's')
+    s = getData(g, 's')
 
     if mode == 'add':
-      set(e, 'b', get(e, 'b')+slope)
+      setData(e, 'b', getData(e, 'b')+slope)
       if move == cons.MOVE_BOTH:
-        set(e, 'a', get(e, 'a')+eleva)
+        setData(e, 'a', getData(e, 'a')+eleva)
       elif move == cons.MOVE_TAIL:
-        set(e, 'a', get(e, 'a')+slope*(s-length))
+        setData(e, 'a', getData(e, 'a')+slope*(s-length))
       elif move == cons.MOVE_HEAD:
-        set(e, 'a', get(e, 'a')+slope*s)
+        setData(e, 'a', getData(e, 'a')+slope*s)
       
     elif mode == 'mul':
-      set(e, 'b', get(e, 'b')+slope)
+      setData(e, 'b', getData(e, 'b')+slope)
       if move == cons.MOVE_TAIL:
-        set(e, 'a', get(e, 'a')+slope*(s-length))
+        setData(e, 'a', getData(e, 'a')+slope*(s-length))
       elif move == cons.MOVE_HEAD:
-        set(e, 'a', get(e, 'a')+slope*s)
+        setData(e, 'a', getData(e, 'a')+slope*s)
 
   if not new:
     return

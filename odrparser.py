@@ -1,11 +1,9 @@
-import xml.etree.ElementTree as ET 
+import xml.etree.ElementTree as ET
 import copy
-from collections import deque
+from collections import deque, defaultdict
 from constants import *
 
 saveName = 'test'
-openPath = None
-PATH = "D:\\Users\\cling\\Documents\\Homework\\Codes\\xodr_project\\test\\"
 
 trees = deque()
 def updateTrees(new_val):
@@ -23,20 +21,26 @@ def updateRoot(new_val):
   global root
   root = new_val
 
-roads = {}
-roadConnections = {}
-laneConnections = {}
-roadEdits = {}
-laneEdits = {}
-roadBackup = {}
-laneBackup = {}
-hdgs = {}
+info0, info1 = None, None
+def updateInfo(newInfo0, newInfo1):
+  global info0
+  global info1
+  info0, info1 = newInfo0, newInfo1
+
+roads = defaultdict(dict)
+roadConnections = defaultdict(dict)
+laneConnections = defaultdict(dict)
+roadEdits = defaultdict(dict)
+laneEdits = defaultdict(dict)
+roadBackup = defaultdict(dict)
+laneBackup = defaultdict(dict)
+hdgs = defaultdict(dict)
 
 def write():
   trees[-1].write(PATH+saveName+"_test.xodr", encoding="utf-8", xml_declaration=True)
   print('Already saved.')
 
-def open(name):
+def openXodr(name):
   tree = None 
   try:
     tree = ET.parse(PATH+'selected_map\\'+name+".xodr")
@@ -49,25 +53,14 @@ def open(name):
   updateTrees(tree)
   updateRoot(trees[-1].getroot())
   updateData()
-  readJson(name)
   return True
-
-selectedRoad = []
-
-def readJson(name):
-  selectedRoad.clear()
-  try:
-    json = ET.parse(PATH+'selected_map\\'+name+".json")
-    print(json)
-  except Exception:
-    print("File not found!")
-    return False
 
 def updateData():
   clearAll()
   tmpJSets = {}
   for road in root.iter('road'):
     id = road.get('id')
+    roads[id] = road
     hdgUpdate(road.findall('.//geometry'), id)
 
     roadConnections[id] = [[], []]
@@ -104,6 +97,7 @@ def pushNewTree():
 # PRIVATE FUNCTION
 
 def clearAll():
+  roads.clear()
   roadConnections.clear()
   laneConnections.clear()
   roadBackup.clear()
@@ -111,12 +105,12 @@ def clearAll():
   hdgs.clear()
 
 def hdgUpdate(gs, id):
-  h0 = get(gs[0],  'hdg')
-  h1 = get(gs[-1], 'hdg')
+  h0 = getData(gs[0],  'hdg')
+  h1 = getData(gs[-1], 'hdg')
   poly1 = gs[-1].find('paramPoly3')
   if poly1 != None:
-    bU, cU, dU = get(poly1, 'bU'), get(poly1, 'cU'), get(poly1, 'dU')
-    bV, cV, dV = get(poly1, 'bV'), get(poly1, 'cV'), get(poly1, 'dV')
+    bU, cU, dU = getData(poly1, 'bU'), getData(poly1, 'cU'), getData(poly1, 'dU')
+    bV, cV, dV = getData(poly1, 'bV'), getData(poly1, 'cV'), getData(poly1, 'dV')
     h1 = (h1+math.atan((bV+2*cV+3*dV)/(bU+2*cU+3*dU)))%(2*numpy.pi)
   hdgs[id] = []
   hdgs[id].append(h0)

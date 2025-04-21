@@ -1,31 +1,140 @@
 from scipy.optimize import root_scalar
+from collections import defaultdict
 import numpy as np
 import math
+import json
+import heapq
+import random
 
 import odrparser as odr
 from constants import *
 
+
+def testModify():
+  graph = buildGRAPH()
+  rectifyGraph(graph, odr.info0, odr.info1)
+
+  # 运行Dijkstra
+  cost, path = dijkstra(graph, 'start', 'end')
+  candidates = []
+  print(cost, path)
+
+def readJson(name):
+  print("FINDING THE TARGET ROADS...")
+  try:
+    with open(PATH+'selected_map\\'+name+".json", 'r') as file:
+      data = json.load(file)
+      agents = data["agents"]
+      tran = agents[0]["transform"]["position"]
+      dest = agents[0]["destinationPoint"]["position"]
+      print(tran, dest)
+      
+      info0 = findRoad(tran["x"], tran["z"])
+      info1 = findRoad(dest["x"], dest["z"])
+      odr.updateInfo(info0, info1)
+
+  except FileNotFoundError:
+    print("Error: File not found!")
+  except json.JSONDecodeError:
+    print("Error: Invalid JSON format!")
+
 def findRoad(x, y):
   candidateRoads = []
-  for road in odr.root.findall('road'):
-    id = road.get('id')
-
+  for id, road in odr.roads.items():
     ans, ansL = projectPoint(road, x, y)
-    lftW, rgtW = getWidth(road, ansL)
-    if -lftW <= ans <= rgtW:
-      candidateRoads.append(id)
-
-  print(candidateRoads)
-  return candidateRoads
-
-"""  if candidateRoads:
-    candidateRoads.sort(key=lambda x: x[1])
-    selected_road = candidateRoads[0][0]
-    return selected_road
+    if ans == float('inf'):
+      continue
+    lws, rws = getLanesWidth(road, ansL)
+  
+    if ans <= 0: #道路左侧
+      for i in range(len(lws)):
+        if ans > lws[i]:
+          candidateRoads.append([id, str(i+1),  ansL, abs(ans)])
+          break
+    else:
+      for i in range(len(rws)):
+        if ans < rws[i]:
+          candidateRoads.append([id, str(-i-1), ansL, abs(ans)])
+          break
+  if candidateRoads:
+    candidateRoads.sort(key=lambda x: x[3])
+    return candidateRoads[0][:3]
   else:
-    return None"""
+    return None
 
 ## PRIVATE METHOD
+
+def buildGRAPH():
+  graph = defaultdict(dict)
+  for id, road in odr.roads.items():
+    length = road.get('length')
+    section = road.find('lanes').find('laneSection')
+    for lane in section.findall('.//lane'):
+      lid = lane.get('id')
+      if lid == "0":
+        continue
+      tailNode = f"road_{id}_lane_{lid}_0"
+      headNode = f"road_{id}_lane_{lid}_1"
+      if int(lid) < 0: #右侧车道
+        graph[tailNode][headNode] = length
+      else:
+        graph[headNode][tailNode] = length
+      
+  for id, item in odr.laneConnections.items():
+    for lid, item_ in item.items():
+      if int(lid) < 0: #右侧车道
+        node = f"road_{id}_lane_{lid}_1"
+        for target in item_[1]:
+          targetNode = f"road_{target[0]}_lane_{target[1]}_{target[2]}"
+          graph[node][targetNode] = 0
+      else:
+        node = f"road_{id}_lane_{lid}_0"
+        for target in item_[0]:
+          targetNode = f"road_{target[0]}_lane_{target[1]}_{target[2]}"
+          graph[node][targetNode] = 0
+  
+  return graph
+
+def rectifyGraph(graph, info0, info1):
+  road0 = odr.roads[info0[0]]
+  length0 = getData(road0, 'length')
+  if int(info0[1]) < 0: # 道路右侧
+    graph['start'][f"road_{info0[0]}_lane_{info0[1]}_1"] = length0-info0[2]
+    graph[f"road_{info0[0]}_lane_{info0[1]}_0"]['start'] = info0[2]
+  else:
+    graph['start'][f"road_{info0[0]}_lane_{info0[1]}_0"] = info0[2]
+    graph[f"road_{info0[0]}_lane_{info0[1]}_1"]['start'] = length0-info0[2]
+
+  road1 = odr.roads[info1[0]]
+  length1 = getData(road1, 'length')
+  if int(info1[1]) < 0: # 道路右侧
+    graph['end'][f"road_{info1[0]}_lane_{info1[1]}_1"] = length1-info1[2]
+    graph[f"road_{info1[0]}_lane_{info1[1]}_0"]['end'] = info1[2]
+  else:
+    graph['end'][f"road_{info1[0]}_lane_{info1[1]}_0"] = info1[2]
+    graph[f"road_{info1[0]}_lane_{info1[1]}_1"]['end'] = length1-info1[2]
+  
+  if info0[0] == info1[0] and info0[1] == info1[1]:
+    if (int(info0[1]) > 0) ^ (info0[2] < info1[2]):
+      graph['start']['end'] = abs(info0[2]-info1[2])
+    else:
+      graph['end']['start'] = abs(info0[2]-info1[2])
+
+def dijkstra(graph, start_node, end_node):
+  heap = [(0, start_node, [])]
+  visited = set()
+  while heap:
+    (cost, node, path) = heapq.heappop(heap)
+    if node in visited:
+      continue
+    visited.add(node)
+    path = path + [node]
+    if node == end_node:
+      return cost, path
+    for neighbor, weight in graph[node].items():
+      if neighbor not in visited:
+        heapq.heappush(heap, (cost+weight, neighbor, path))
+  return float('inf'), []
 
 def projectPoint(road, tarX, tarY):
   gs = road.find('planView').findall('geometry')
@@ -33,9 +142,9 @@ def projectPoint(road, tarX, tarY):
   length = 0
 
   for g in gs:
-    h    = get(g, 'hdg')
-    x, y = get(g, 'x'), get(g, 'y')
-    l    = get(g, 'length')
+    h    = getData(g, 'hdg')
+    x, y = getData(g, 'x'), getData(g, 'y')
+    l    = getData(g, 'length')
     dis, pos = 0, 0
 
     if g.find('line') != None:
@@ -51,8 +160,8 @@ def projectPoint(road, tarX, tarY):
       
     else:
       poly = g.find('paramPoly3')
-      bU, cU, dU = get(poly, 'bU'), get(poly, 'cU'), get(poly, 'dU')
-      bV, cV, dV = get(poly, 'bV'), get(poly, 'cV'), get(poly, 'dV')
+      bU, cU, dU = getData(poly, 'bU'), getData(poly, 'cU'), getData(poly, 'dU')
+      bV, cV, dV = getData(poly, 'bV'), getData(poly, 'cV'), getData(poly, 'dV')
       cosH, sinH = math.cos(h), math.sin(h)
 
       def compute_uv(t):
@@ -119,27 +228,33 @@ def projectPoint(road, tarX, tarY):
 
   return ans, ansL
 
-def getWidth(road, pos):
-  lftW, rgtW = 0, 0
+def getLanesWidth(road, pos):
   lanes = road.find('lanes').findall('.//lane')
+  lws, rws = [], []
+
   for lane in lanes:
-    id = get(lane, 'id')
+    id = getData(lane, 'id')
     if id == 0:
       continue
-    
+
     widths = lane.findall('width')
     for i in range(1, len(widths)):
-      sOffset = get(widths[i], 'sOffset')
+      sOffset = getData(widths[i], 'sOffset')
       if sOffset > pos:
         w = widths[i-1]
-        pos -= get(w, 'sOffset')
-        a, b = get(w, 'a'), get(w, 'b')
-        c, d = get(w, 'c'), get(w, 'd')
+        pos -= getData(w, 'sOffset')
+        a, b = getData(w, 'a'), getData(w, 'b')
+        c, d = getData(w, 'c'), getData(w, 'd')
         num = a+b*pos+c*pos**2+d*pos**3
+        # TODO: 此处默认车道序号降序排列
         if id < 0:
-          rgtW += num
+          rws.append(num)
         else:
-          lftW += num
+          lws.insert(0, -num)
         break
-  return lftW, rgtW
+  for i in range(1, len(lws)):
+    lws[i] += lws[i-1]
+  for i in range(1, len(rws)):
+    rws[i] += rws[i-1]
+  return lws, rws
 

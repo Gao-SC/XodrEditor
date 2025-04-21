@@ -13,12 +13,13 @@ if __name__ == '__main__':
         if openPath == 'exit':
             plt.ioff()
             break
-        if odr.open(openPath) == False:
+        if odr.openXodr(openPath) == False:
             continue
+        else:
+            readJson(openPath)
+            testModify()
 
         while True:
-            findRoad(2.69, -1.82)
-            findRoad(-5.74, -0.76)
             command = input().split()
             match command[0]:
                 case "save":

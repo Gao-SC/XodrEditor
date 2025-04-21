@@ -72,22 +72,22 @@ def fit_constrained_curve(x_data, y_data, h_data, params, MAX_DEVIATION):
 
 def solveInitialCurve(gs, maxDeviation, step):
   g0, g1 = gs[0], gs[-1]
-  h0, h1 = get(g0, 'hdg'),   get(g1, 'hdg')
-  x0, y0 = get(g0, 'x')   ,  get(g0, 'y')
-  x1, y1 = get(g1, 'x')-x0,  get(g1, 'y')-y0
+  h0, h1 = getData(g0, 'hdg'),   getData(g1, 'hdg')
+  x0, y0 = getData(g0, 'x')   ,  getData(g0, 'y')
+  x1, y1 = getData(g1, 'x')-x0,  getData(g1, 'y')-y0
 
   poly = g0.find('paramPoly3')
   if poly != None:
-    bU, bV = get(poly, 'bU'), get(poly, 'bV')
+    bU, bV = getData(poly, 'bU'), getData(poly, 'bV')
     h0 = (h0+math.atan2(bV, bU))%(2*math.pi)
   line = g1.find('line')
   if line != None:
-    x1 += get(g1, 'length')*math.cos(h1)
-    y1 += get(g1, 'length')*math.sin(h1)
+    x1 += getData(g1, 'length')*math.cos(h1)
+    y1 += getData(g1, 'length')*math.sin(h1)
   poly = g1.find('paramPoly3')
   if poly != None:
-    bU, cU, dU = get(poly, 'bU'), get(poly, 'cU'), get(poly, 'dU')
-    bV, cV, dV = get(poly, 'bV'), get(poly, 'cV'), get(poly, 'dV')
+    bU, cU, dU = getData(poly, 'bU'), getData(poly, 'cU'), getData(poly, 'dU')
+    bV, cV, dV = getData(poly, 'bV'), getData(poly, 'cV'), getData(poly, 'dV')
     x_, y_ = bU+cU+dU, bV+cV+dV
     x1 += x_*math.cos(h1)-y_*math.sin(h1)
     y1 += x_*math.sin(h1)+y_*math.cos(h1)
@@ -121,16 +121,16 @@ def getMidData(gs, x0, y0, step):
   position = step
 
   for g in gs:
-    length = get(g, 'length')
-    x = get(g, 'x')-x0
-    y = get(g, 'y')-y0
-    h = get(g, 'hdg')
+    length = getData(g, 'length')
+    x = getData(g, 'x')-x0
+    y = getData(g, 'y')-y0
+    h = getData(g, 'hdg')
 
     poly = g.find('paramPoly3')
     if poly != None:
       while length > position:
-        bU, cU, dU = get(poly, 'bU'), get(poly, 'cU'), get(poly, 'dU')
-        bV, cV, dV = get(poly, 'bV'), get(poly, 'cV'), get(poly, 'dV')
+        bU, cU, dU = getData(poly, 'bU'), getData(poly, 'cU'), getData(poly, 'dU')
+        bV, cV, dV = getData(poly, 'bV'), getData(poly, 'cV'), getData(poly, 'dV')
         dx, dy, dh = find_pos(bU, cU, dU, bV, cV, dV, position)
         xs.append(x+dx*math.cos(h)-dy*math.sin(h))
         ys.append(y+dx*math.sin(h)+dy*math.cos(h))
@@ -148,24 +148,24 @@ def getMidData(gs, x0, y0, step):
   return numpy.array(xs), numpy.array(ys), numpy.array(hs)
 
 def rectifyRoadData(road, length_new):
-  length = get(road, "length")
-  set(road, 'length', length_new)
+  length = getData(road, "length")
+  setData(road, 'length', length_new)
   sections = road.find('lanes').findall('laneSection')
   elevas = road.find('elevationProfile').findall('elevation')
   widths = road.find('lanes').findall('.//width')
   k_l = length_new/length
   for section in sections:
-    set(section, 's', get(section, 's')*k_l)
+    setData(section, 's', getData(section, 's')*k_l)
   for eleva in elevas:
-    set(eleva, 's', get(eleva, 's')*k_l)
-    set(eleva, 'b', get(eleva, 'b')/k_l)
-    set(eleva, 'c', get(eleva, 'c')/(k_l**2))
-    set(eleva, 'd', get(eleva, 'd')/(k_l**3))
+    setData(eleva, 's', getData(eleva, 's')*k_l)
+    setData(eleva, 'b', getData(eleva, 'b')/k_l)
+    setData(eleva, 'c', getData(eleva, 'c')/(k_l**2))
+    setData(eleva, 'd', getData(eleva, 'd')/(k_l**3))
   for width in widths:
-    set(width, 'sOffset', get(width, 'sOffset')*k_l)
-    set(width, 'b', get(width, 'b')/k_l)
-    set(width, 'c', get(width, 'c')/(k_l**2))
-    set(width, 'd', get(width, 'd')/(k_l**3))
+    setData(width, 'sOffset', getData(width, 'sOffset')*k_l)
+    setData(width, 'b', getData(width, 'b')/k_l)
+    setData(width, 'c', getData(width, 'c')/(k_l**2))
+    setData(width, 'd', getData(width, 'd')/(k_l**3))
 
 def bezierToParam(param):
   x3, y3, l0, l1, h0, h1 = param
@@ -177,15 +177,15 @@ def bezierToParam(param):
 
 def getGBezier(g):
   x, y, l0, l1 = 0, 0, 1, 1
-  h0, h1 = get(g, 'hdg'), get(g, 'hdg')
+  h0, h1 = getData(g, 'hdg'), getData(g, 'hdg')
   line = g.find('line')
   if line != None:
-    x = get(g, 'length')*math.cos(h0)
-    y = get(g, 'length')*math.sin(h0)
+    x = getData(g, 'length')*math.cos(h0)
+    y = getData(g, 'length')*math.sin(h0)
   poly = g.find('paramPoly3')
   if poly != None:
-    bU, cU, dU = get(poly, 'bU'), get(poly, 'cU'), get(poly, 'dU')
-    bV, cV, dV = get(poly, 'bV'), get(poly, 'cV'), get(poly, 'dV')
+    bU, cU, dU = getData(poly, 'bU'), getData(poly, 'cU'), getData(poly, 'dU')
+    bV, cV, dV = getData(poly, 'bV'), getData(poly, 'cV'), getData(poly, 'dV')
     x_, y_ = bU+cU+dU, bV+cV+dV
     x = x_*math.cos(h0)-y_*math.sin(h0)
     y = x_*math.sin(h0)+y_*math.cos(h0)
@@ -203,30 +203,30 @@ def initRoadArc(id, md, st):
   ## 计算道路方程
   planView.clear()
   length = 0
-  x, y = get(gs[0], 'x'), get(gs[0], 'y')
+  x, y = getData(gs[0], 'x'), getData(gs[0], 'y')
   params = []
   for bezier in beziers:
     param = bezierToParam(bezier)
     l = getLength(param, 1)
-    param.append(x-get(gs[0], 'x'))
-    param.append(y-get(gs[0], 'y'))
+    param.append(x-getData(gs[0], 'x'))
+    param.append(y-getData(gs[0], 'y'))
     params.append(param)
 
     g = ET.Element('geometry')
-    set(g, 's', length)
-    set(g, 'x', x)
-    set(g, 'y', y)
-    set(g, 'hdg', 0)
-    set(g, 'length', l)
+    setData(g, 's', length)
+    setData(g, 'x', x)
+    setData(g, 'y', y)
+    setData(g, 'hdg', 0)
+    setData(g, 'length', l)
     poly = ET.Element('paramPoly3')
-    set(poly, 'aU', 0)
-    set(poly, 'bU', param[0])
-    set(poly, 'cU', param[1])
-    set(poly, 'dU', param[2])
-    set(poly, 'aV', 0)
-    set(poly, 'bV', param[3])
-    set(poly, 'cV', param[4])
-    set(poly, 'dV', param[5])
+    setData(poly, 'aU', 0)
+    setData(poly, 'bU', param[0])
+    setData(poly, 'cU', param[1])
+    setData(poly, 'dU', param[2])
+    setData(poly, 'aV', 0)
+    setData(poly, 'bV', param[3])
+    setData(poly, 'cV', param[4])
+    setData(poly, 'dV', param[5])
     length += l
     x += bezier[0]
     y += bezier[1]
@@ -264,33 +264,33 @@ def editRoadArc(id, v0, v1, h0, h1, gi):
       else:
         bezier[4] += h1
 
-    x, y = get(gs[i], 'x'), get(gs[i], 'y')
+    x, y = getData(gs[i], 'x'), getData(gs[i], 'y')
     param = bezierToParam(bezier)
     l = getLength(param, 1)
-    param.append(x-get(gs[0], 'x'))
-    param.append(y-get(gs[0], 'y'))
+    param.append(x-getData(gs[0], 'x'))
+    param.append(y-getData(gs[0], 'y'))
     params.append(param)
     
     if judge:
-      x, y = get(gs[i], 'x'), get(gs[i], 'y')
+      x, y = getData(gs[i], 'x'), getData(gs[i], 'y')
       gs[i].clear()
-      set(gs[i], 's', length_new)
-      set(gs[i], 'x', x)
-      set(gs[i], 'y', y)
-      set(gs[i], 'hdg', 0)
-      set(gs[i], 'length', l)
+      setData(gs[i], 's', length_new)
+      setData(gs[i], 'x', x)
+      setData(gs[i], 'y', y)
+      setData(gs[i], 'hdg', 0)
+      setData(gs[i], 'length', l)
       poly = ET.Element('paramPoly3')
-      set(poly, 'aU', 0)
-      set(poly, 'bU', param[0])
-      set(poly, 'cU', param[1])
-      set(poly, 'dU', param[2])
-      set(poly, 'aV', 0)
-      set(poly, 'bV', param[3])
-      set(poly, 'cV', param[4])
-      set(poly, 'dV', param[5])
+      setData(poly, 'aU', 0)
+      setData(poly, 'bU', param[0])
+      setData(poly, 'cU', param[1])
+      setData(poly, 'dU', param[2])
+      setData(poly, 'aV', 0)
+      setData(poly, 'bV', param[3])
+      setData(poly, 'cV', param[4])
+      setData(poly, 'dV', param[5])
       gs[i].append(poly)
     elif i >= gi+1:
-      set(gs[i], 's', length_new)
+      setData(gs[i], 's', length_new)
     length_new += l
 
   showCurve(params)

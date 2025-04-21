@@ -5,42 +5,42 @@ from collections import deque
 import copy
 
 def setWidth(width: ET.Element, value, mode, distance=0):
-  a = get(width, 'a')
-  b = get(width, 'b')
-  c = get(width, 'c')
-  d = get(width, 'd')
+  a = getData(width, 'a')
+  b = getData(width, 'b')
+  c = getData(width, 'c')
+  d = getData(width, 'd')
   match mode:
     case 'add':
-      set(width, 'a', value+get(width, 'a'))
+      setData(width, 'a', value+getData(width, 'a'))
     case 'stail1':
-      x = distance-get(width, 'sOffset')
+      x = distance-getData(width, 'sOffset')
       newC = c-3*value/x**2
       newD = d+2*value/x**3
-      set(width, 'a', a+value)
-      set(width, 'c', newC)
-      set(width, 'd', newD)
+      setData(width, 'a', a+value)
+      setData(width, 'c', newC)
+      setData(width, 'd', newD)
     case 'shead1':
-      x = distance-get(width, 'sOffset')
+      x = distance-getData(width, 'sOffset')
       newC = c+3*value/x**2
       newD = d-2*value/x**3
-      set(width, 'c', newC)
-      set(width, 'd', newD)
+      setData(width, 'c', newC)
+      setData(width, 'd', newD)
     case 'stail2':
-      x = distance-get(width, 'sOffset')
+      x = distance-getData(width, 'sOffset')
       value*x/distance
-      set(width, 'a', a+value/distance*x)
-      set(width, 'b', b-value/distance)
+      setData(width, 'a', a+value/distance*x)
+      setData(width, 'b', b-value/distance)
     case 'shead2':
-      x = get(width, 'sOffset')
+      x = getData(width, 'sOffset')
       value*x/distance
-      set(width, 'a', a+value/distance*x)
-      set(width, 'b', b+value/distance)
+      setData(width, 'a', a+value/distance*x)
+      setData(width, 'b', b+value/distance)
 
     case 'mul':
-      set(width, 'a', value*get(width, 'a'))
-      set(width, 'b', value*get(width, 'b'))
-      set(width, 'c', value*get(width, 'c'))
-      set(width, 'd', value*get(width, 'd'))
+      setData(width, 'a', value*getData(width, 'a'))
+      setData(width, 'b', value*getData(width, 'b'))
+      setData(width, 'c', value*getData(width, 'c'))
+      setData(width, 'd', value*getData(width, 'd'))
     case _:
       return
     
@@ -74,7 +74,7 @@ def editRoadWidth(id, value, smooth=0, maxStep=0, sameHdg=0, laneIds=[]):
 
 def editLaneWidth(id, lid, value, mode, smooth):
   road = odr.roads[id]
-  length = get(road, 'length')
+  length = getData(road, 'length')
   section = road.find('lanes').find('laneSection')
 
   for lane in section.findall('.//lane'):
@@ -91,11 +91,11 @@ def editLaneWidth(id, lid, value, mode, smooth):
           setWidth(widths[j], value, 'mul')
         case ('addt', 1):
           if j == 0:
-            nextS = get(widths[j+1], 'sOffset')
+            nextS = getData(widths[j+1], 'sOffset')
             setWidth(widths[j], value, 'stail1', distance=nextS)
         case ('addh', 1):
           if j == widthNum-2:
-            nextS = get(widths[j+1], 'sOffset')
+            nextS = getData(widths[j+1], 'sOffset')
             setWidth(widths[j], value, 'shead1', distance=nextS)
 
         case ('addt', 2):
