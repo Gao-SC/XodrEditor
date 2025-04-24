@@ -60,17 +60,18 @@ def editRoadArc(id, x0, y0, v0, h0, x1, y1, v1, h1, gi):
   length_new = 0
   edit0 = x0 != 0 or y0 != 0 or h0 != 0
   edit1 = x1 != 0 or y1 != 0 or h1 != 0
+  B = getGBezier(gs[gi])
+  euc_dis = math.sqrt(B[0]**2+B[1]**2)
   for i in range(len(gs)):
     bezier = getGBezier(gs[i])
     judge = i == gi-1 and edit0 or i == gi or i == gi+1 and edit1
     deltaX, deltaY = 0, 0
     if judge:
-      if i == gi-1 and h0 != 0:
+      if i == gi-1 and edit0:
         bezier[0] += x0*euc_dis
         bezier[1] += y0*euc_dis
         bezier[5] += h0
       elif i == gi:
-        euc_dis = math.sqrt(bezier[0]**2+bezier[1]**2)
         deltaX, deltaY = x0*euc_dis, y0*euc_dis
         bezier[0] += (x1-x0)*euc_dis
         bezier[1] += (y1-y0)*euc_dis

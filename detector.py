@@ -9,10 +9,16 @@ import random
 import odrparser as odr
 from constants import *
 
+npcInfos = []
+egoT, egoD = None, None
+def updateInfo(newEgoT, newEgoD):
+  global egoT
+  global egoD
+  egoT, egoD = newEgoT, newEgoD
 
 def testModify():
   graph = buildGRAPH()
-  rectifyGraph(graph, odr.info0, odr.info1)
+  rectifyGraph(graph)
 
   # 运行Dijkstra
   paths = dijkstra(graph, 'start', 'end')
@@ -22,9 +28,9 @@ def testModify():
     for node in path:
       id, lid = "", ""
       if node == "start":
-        id, lid = odr.info0[0], odr.info0[1]
+        id, lid = egoT[0], egoT[1]
       elif node == "end":
-        id, lid = odr.info1[0], odr.info1[1]
+        id, lid = egoD[0], egoD[1]
       else:
         data = node.split('_')
         id, lid = data[1], data[3]
@@ -65,23 +71,45 @@ def readJson(name):
     with open(PATH+'selected_map\\'+name+".json", 'r') as file:
       data = json.load(file)
       agents = data["agents"]
-      tran = agents[0]["transform"]["position"]
-      dest = agents[0]["destinationPoint"]["position"]
-      
-      info0 = findRoad(tran["x"], tran["z"])
-      info1 = findRoad(dest["x"], dest["z"])
-      print(info0, info1)
-      odr.updateInfo(info0, info1)
+      tPos0 = agents[0]["transform"]["position"]
+      tRot0 = agents[0]["transform"]["rotation"]
+      dPos0 = agents[0]["destinationPoint"]["position"]
+      dRot0 = agents[0]["destinationPoint"]["rotation"]
 
+      global egoT
+      global egoD
+      egoT = findRoad(tPos0, tRot0)
+      egoD = findRoad(dPos0, dRot0)
+      print(egoT, egoD)
+
+      npcs = agents[1:]
+      npcInfos.clear()
+      for npc in npcs:
+        npcInfo = []
+        tPos = npc["transform"]["position"]
+        tRot = npc["transform"]["rotation"]
+        npcInfo.append(findRoad(tPos, tRot))
+
+        wayPoints = npc["waypoints"]
+        for point in wayPoints:
+          pos = point["position"]
+          rot = point["angle"]
+          npcInfo.append(findRoad(pos, rot))
+
+        dPos = npc["destinationPoint"]["position"]
+        dRot = npc["destinationPoint"]["rotation"]
+        npcInfo.append(findRoad(dPos, dRot))
+        
+      
   except FileNotFoundError:
     print("Error: File not found!")
   except json.JSONDecodeError:
     print("Error: Invalid JSON format!")
 
-def findRoad(x, y):
+def findRoad(pos, rot):
   candidateRoads = []
   for id, road in odr.roads.items():
-    ans, ansL = projectPoint(road, x, y)
+    ans, ansL = projectPoint(road, pos['x'], pos['z'])
     if ans == float('inf'):
       continue
     lws, rws = getLanesWidth(road, ansL)
@@ -135,30 +163,30 @@ def buildGRAPH():
   
   return graph
 
-def rectifyGraph(graph, info0, info1):
-  road0 = odr.roads[info0[0]]
+def rectifyGraph(graph):
+  road0 = odr.roads[egoT[0]]
   length0 = getData(road0, 'length')
-  if int(info0[1]) < 0: # 道路右侧
-    graph['start'][f"road_{info0[0]}_lane_{info0[1]}_1"] = length0-info0[2]
-    graph[f"road_{info0[0]}_lane_{info0[1]}_0"]['start'] = info0[2]
+  if int(egoT[1]) < 0: # 道路右侧
+    graph['start'][f"road_{egoT[0]}_lane_{egoT[1]}_1"] = length0-egoT[2]
+    graph[f"road_{egoT[0]}_lane_{egoT[1]}_0"]['start'] = egoT[2]
   else:
-    graph['start'][f"road_{info0[0]}_lane_{info0[1]}_0"] = info0[2]
-    graph[f"road_{info0[0]}_lane_{info0[1]}_1"]['start'] = length0-info0[2]
+    graph['start'][f"road_{egoT[0]}_lane_{egoT[1]}_0"] = egoT[2]
+    graph[f"road_{egoT[0]}_lane_{egoT[1]}_1"]['start'] = length0-egoT[2]
 
-  road1 = odr.roads[info1[0]]
+  road1 = odr.roads[egoD[0]]
   length1 = getData(road1, 'length')
-  if int(info1[1]) < 0: # 道路右侧
-    graph['end'][f"road_{info1[0]}_lane_{info1[1]}_1"] = length1-info1[2]
-    graph[f"road_{info1[0]}_lane_{info1[1]}_0"]['end'] = info1[2]
+  if int(egoD[1]) < 0: # 道路右侧
+    graph['end'][f"road_{egoD[0]}_lane_{egoD[1]}_1"] = length1-egoD[2]
+    graph[f"road_{egoD[0]}_lane_{egoD[1]}_0"]['end'] = egoD[2]
   else:
-    graph['end'][f"road_{info1[0]}_lane_{info1[1]}_0"] = info1[2]
-    graph[f"road_{info1[0]}_lane_{info1[1]}_1"]['end'] = length1-info1[2]
+    graph['end'][f"road_{egoD[0]}_lane_{egoD[1]}_0"] = egoD[2]
+    graph[f"road_{egoD[0]}_lane_{egoD[1]}_1"]['end'] = length1-egoD[2]
   
-  if info0[0] == info1[0] and info0[1] == info1[1]:
-    if (int(info0[1]) > 0) ^ (info0[2] < info1[2]):
-      graph['start']['end'] = abs(info0[2]-info1[2])
+  if egoT[0] == egoD[0] and egoT[1] == egoD[1]:
+    if (int(egoT[1]) > 0) ^ (egoT[2] < egoD[2]):
+      graph['start']['end'] = abs(egoT[2]-egoD[2])
     else:
-      graph['end']['start'] = abs(info0[2]-info1[2])
+      graph['end']['start'] = abs(egoT[2]-egoD[2])
 
 def dijkstra(graph, start, end, k=3):
   heap = []
@@ -190,7 +218,10 @@ def dijkstra(graph, start, end, k=3):
 
 def projectPoint(road, tarX, tarY):
   gs = road.find('planView').findall('geometry')
+  x0, y0 = getData(gs[0], 'x'), getData(gs[0], 'y')
   ans, ansL = float('inf'), 0
+  if math.hypot(x0-tarX, y0-tarY) > getData(road, 'length')*2:
+    return ans, ansL
   length = 0
 
   for g in gs:

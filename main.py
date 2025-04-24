@@ -1,9 +1,9 @@
 import odrparser as odr
+import detector as det
 from constants import *
 from width import *
 from elevation import *
 from curvature import *
-from detector import *
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
@@ -34,9 +34,9 @@ if __name__ == '__main__':
                 case "saveName":
                     odr.saveName = command[1]
                 case "test":
-                    if odr.info0 == None:
-                        readJson(openPath)
-                    command = testModify()
+                    if det.egoT == None:
+                        det.readJson(openPath)
+                    command = det.testModify()
                     if command[0] == "curve":
                         param = command[1].split('=')
                         gsize = initRoadArc(id=param[1], md=0.01, st=1.0)

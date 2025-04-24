@@ -21,12 +21,6 @@ def updateRoot(new_val):
   global root
   root = new_val
 
-info0, info1 = None, None
-def updateInfo(newInfo0, newInfo1):
-  global info0
-  global info1
-  info0, info1 = newInfo0, newInfo1
-
 roads = defaultdict(dict)
 roadConnections = defaultdict(dict)
 laneConnections = defaultdict(dict)
@@ -97,9 +91,6 @@ def pushNewTree():
 # PRIVATE FUNCTION
 
 def clearAll():
-  global info0
-  global info1
-  info0, info1 = None, None
   roads.clear()
   roadConnections.clear()
   laneConnections.clear()
@@ -146,7 +137,7 @@ def roadUpdate(id, link, lanes, tmpJSets, dir):
           if [id, lid, dir] not in laneConnections[p_sId][p_sLid][direction]:    
             laneConnections[p_sId][p_sLid][direction].append([id, lid, dir])
     else:
-      tmpJSets[id][0] = p_s.get("elementId")
+      tmpJSets[id][dir] = p_s.get("elementId")
 
 def junctionUpdate(id, connections, tmpJSets):
   for connection in connections:
