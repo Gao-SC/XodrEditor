@@ -24,15 +24,6 @@ PATH = "D:\\Users\\cling\\Documents\\Homework\\Codes\\xodr_project\\test\\"
 getData = lambda a, b :float(a.get(b))
 setData = lambda a, b, c :a.set(b, str(c))
 
-def getLength(param, t):
-  bU, cU, dU, bV, cV, dV = param
-  def integrand(p):
-    du = bU+2*cU*p+3*dU*p**2
-    dv = bV+2*cV*p+3*dV*p**2
-    return numpy.sqrt(du**2+dv**2)
-  length, _ = quad(integrand, 0, t)
-  return length
-
 colors = [
   '#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
   '#42d4f4', '#f032e6', '#fabed4', '#469990', '#dcbeff', 

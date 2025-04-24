@@ -9,12 +9,58 @@ import random
 import odrparser as odr
 from constants import *
 
-npcInfos = []
+carInfos = defaultdict(dict)
 egoT, egoD = None, None
-def updateInfo(newEgoT, newEgoD):
-  global egoT
-  global egoD
-  egoT, egoD = newEgoT, newEgoD
+data = None
+
+def readJson(name):
+  print("FINDING THE TARGET ROADS...")
+  try:
+    with open(PATH+'selected_map\\'+name+".json", 'r') as file:
+      # 初始化
+      global data
+      data = json.load(file)
+      carInfos.clear()
+      for id, road in odr.roads.items():
+        carInfos[id] = defaultdict(dict)
+        lanes = road.find("lanes").findall(".//lane")
+        for lane in lanes:
+          carInfos[id][lane.get('id')] = []
+          
+      agents = data["agents"]
+      tPos0 = agents[0]["transform"]["position"]
+      tRot0 = agents[0]["transform"]["rotation"]
+      dPos0 = agents[0]["destinationPoint"]["position"]
+      dRot0 = agents[0]["destinationPoint"]["rotation"]
+
+      global egoT
+      global egoD
+      egoT, egoD = findRoad(tPos0, tRot0), findRoad(dPos0, dRot0)
+      carInfos[egoT[0]][egoT[1]].append({"carId": 0, "ordId": 0, "pos": egoT[2]})
+      carInfos[egoD[0]][egoD[1]].append({"carId": 0, "ordId": 1, "pos": egoD[2]})
+      
+      npcCars = agents[1:]
+      for i in range(len(npcCars)):
+        tPos = npcCars[i]["transform"]["position"]
+        tRot = npcCars[i]["transform"]["rotation"]
+        tNpc = findRoad(tPos, tRot)
+        carInfos[tNpc[0]][tNpc[1]].append({"carId": i, "ordId": 0, "pos": tNpc[2]})
+
+        wayPoints = npcCars[i]["waypoints"]
+        for j in range(len(wayPoints)):
+          pos = wayPoints[j]["position"]
+          rot = wayPoints[j]["angle"]
+          npc = findRoad(pos, rot)
+          print(npc)
+          carInfos[npc[0]][npc[1]].append({"carId": i, "ordId": j+1, "pos": npc[2]})
+      for i in carInfos.values():
+        print(i)
+  
+  except FileNotFoundError:
+    print("Error: File not found!")
+  except json.JSONDecodeError:
+    print("Error: Invalid JSON format!")
+  print("Success!")
 
 def testModify():
   graph = buildGRAPH()
@@ -24,6 +70,7 @@ def testModify():
   paths = dijkstra(graph, 'start', 'end')
   candidateRoads = []
   candidateLanes = []
+  egoT, egoD = carInfos[0][0], carInfos[0][1]
   for cost, path in paths:
     for node in path:
       id, lid = "", ""
@@ -65,46 +112,6 @@ def testModify():
   print(command)
   return command
 
-def readJson(name):
-  print("FINDING THE TARGET ROADS...")
-  try:
-    with open(PATH+'selected_map\\'+name+".json", 'r') as file:
-      data = json.load(file)
-      agents = data["agents"]
-      tPos0 = agents[0]["transform"]["position"]
-      tRot0 = agents[0]["transform"]["rotation"]
-      dPos0 = agents[0]["destinationPoint"]["position"]
-      dRot0 = agents[0]["destinationPoint"]["rotation"]
-
-      global egoT
-      global egoD
-      egoT = findRoad(tPos0, tRot0)
-      egoD = findRoad(dPos0, dRot0)
-      print(egoT, egoD)
-
-      npcs = agents[1:]
-      npcInfos.clear()
-      for npc in npcs:
-        npcInfo = []
-        tPos = npc["transform"]["position"]
-        tRot = npc["transform"]["rotation"]
-        npcInfo.append(findRoad(tPos, tRot))
-
-        wayPoints = npc["waypoints"]
-        for point in wayPoints:
-          pos = point["position"]
-          rot = point["angle"]
-          npcInfo.append(findRoad(pos, rot))
-
-        dPos = npc["destinationPoint"]["position"]
-        dRot = npc["destinationPoint"]["rotation"]
-        npcInfo.append(findRoad(dPos, dRot))
-        
-      
-  except FileNotFoundError:
-    print("Error: File not found!")
-  except json.JSONDecodeError:
-    print("Error: Invalid JSON format!")
 
 def findRoad(pos, rot):
   candidateRoads = []
@@ -164,6 +171,7 @@ def buildGRAPH():
   return graph
 
 def rectifyGraph(graph):
+  egoT, egoD = carInfos[0][0], carInfos[0][1]
   road0 = odr.roads[egoT[0]]
   length0 = getData(road0, 'length')
   if int(egoT[1]) < 0: # 道路右侧
@@ -302,7 +310,7 @@ def projectPoint(road, tarX, tarY):
           dis = math.hypot(x-tarX, y-tarY)
           if dx_dt*(tarY-y) > dy_dt*(tarX-x):
             dis *= -1
-      pos = getLength([bU, cU, dU, bV, cV, dV], T)
+      pos = odr.getLength([bU, cU, dU, bV, cV, dV], T)
 
     if abs(ans) > abs(dis):
       ans = dis
@@ -340,4 +348,3 @@ def getLanesWidth(road, pos):
   for i in range(1, len(rws)):
     rws[i] += rws[i-1]
   return lws, rws
-

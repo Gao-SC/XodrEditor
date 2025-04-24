@@ -15,6 +15,7 @@ if __name__ == '__main__':
             break
         if odr.openXodr(openPath) == False:
             continue
+        det.readJson(openPath)
 
         test, command = False, None
         while True:
@@ -34,8 +35,6 @@ if __name__ == '__main__':
                 case "saveName":
                     odr.saveName = command[1]
                 case "test":
-                    if det.egoT == None:
-                        det.readJson(openPath)
                     command = det.testModify()
                     if command[0] == "curve":
                         param = command[1].split('=')

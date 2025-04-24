@@ -1,10 +1,11 @@
 import xml.etree.ElementTree as ET
 import odrparser as odr
+import detector as det
 from constants import *
 from collections import deque
 import copy
 
-def setWidth(width: ET.Element, value, mode, distance=0):
+def setWidth(width: ET.Element, value, mode, length=0):
   a = getData(width, 'a')
   b = getData(width, 'b')
   c = getData(width, 'c')
@@ -12,35 +13,32 @@ def setWidth(width: ET.Element, value, mode, distance=0):
   match mode:
     case 'add':
       setData(width, 'a', value+getData(width, 'a'))
+      return [value, 0, 0, 0]
     case 'stail1':
-      x = distance-getData(width, 'sOffset')
+      x = length
       newC = c-3*value/x**2
       newD = d+2*value/x**3
       setData(width, 'a', a+value)
       setData(width, 'c', newC)
       setData(width, 'd', newD)
+      return [value, 0, -3*value/x**2, 2*value/x**3]
     case 'shead1':
-      x = distance-getData(width, 'sOffset')
+      x = length
       newC = c+3*value/x**2
       newD = d-2*value/x**3
       setData(width, 'c', newC)
       setData(width, 'd', newD)
+      return [0, 0, 3*value/x**2, -2*value/x**3]
     case 'stail2':
-      x = distance-getData(width, 'sOffset')
-      value*x/distance
-      setData(width, 'a', a+value/distance*x)
-      setData(width, 'b', b-value/distance)
+      x = length-getData(width, 'sOffset')
+      setData(width, 'a', a+value/length*x)
+      setData(width, 'b', b-value/length)
+      return [value/length*x, -value/length, 0, 0]
     case 'shead2':
       x = getData(width, 'sOffset')
-      value*x/distance
-      setData(width, 'a', a+value/distance*x)
-      setData(width, 'b', b+value/distance)
-
-    case 'mul':
-      setData(width, 'a', value*getData(width, 'a'))
-      setData(width, 'b', value*getData(width, 'b'))
-      setData(width, 'c', value*getData(width, 'c'))
-      setData(width, 'd', value*getData(width, 'd'))
+      setData(width, 'a', a+value/length*x)
+      setData(width, 'b', b+value/length)
+      return [value/length*x, value/length, 0, 0]
     case _:
       return
     
@@ -73,6 +71,7 @@ def editRoadWidth(id, value, smooth=0, maxStep=0, sameHdg=0, laneIds=[]):
         editLaneWidth(rid, lid, value, 'add' , smooth)
 
 def editLaneWidth(id, lid, value, mode, smooth):
+  print("here")
   road = odr.roads[id]
   length = getData(road, 'length')
   section = road.find('lanes').find('laneSection')
@@ -83,27 +82,67 @@ def editLaneWidth(id, lid, value, mode, smooth):
     widths = lane.findall('width')
     widthNum = len(widths)
 
+    dis = 0
+    if smooth == 1 and mode == 'addt':
+      for j in range(widthNum):
+        if getData(widths[j], 'sOffset') >= value*2:
+          dis = getData(widths[j], 'sOffset')
+          break
+    if smooth == 1 and mode == 'addh':
+      for j in range(widthNum-1, 0, -1):
+        if length-getData(widths[j], 'sOffset') >= value*2:
+          dis = getData(widths[j], 'sOffset')
+          break
+      
     for j in range(widthNum):
+      delta = None
       match (mode, smooth):
         case ('add', x):
-          setWidth(widths[j], value, 'add')
-        case ('mul', x):
-          setWidth(widths[j], value, 'mul')
+          delta = setWidth(widths[j], value, 'add')
         case ('addt', 1):
-          if j == 0:
-            nextS = getData(widths[j+1], 'sOffset')
-            setWidth(widths[j], value, 'stail1', distance=nextS)
+          if getData(widths[j], 'sOffset') < dis:
+            delta = setWidth(widths[j], value, 'stail1', dis)
         case ('addh', 1):
-          if j == widthNum-2:
-            nextS = getData(widths[j+1], 'sOffset')
-            setWidth(widths[j], value, 'shead1', distance=nextS)
-
+          if getData(widths[j], 'sOffset') >= dis:
+            delta = setWidth(widths[j], value, 'shead1', length-dis)
         case ('addt', 2):
-          setWidth(widths[j], value, 'stail2', distance=length)
+          delta = setWidth(widths[j], value, 'stail2', length)
         case ('addh', 2):
-          setWidth(widths[j], value, 'shead2', distance=length)
-        case _:
+          delta = setWidth(widths[j], value, 'shead2', length)
+      
+      s0 = getData(widths[j], "sOffset")
+      s1 = getData(road, "length") if j == widthNum-1 else getData(widths[j+1], "sOffset")
+
+      for laneId, infos in det.carInfos[id].items():
+        if int(laneId) < 0 < int(lid)  or int(laneId) > 0 > int(lid) :
           continue
+        if int(lid) >= int(laneId) > 0 or int(lid) <= int(laneId) < 0:
+          continue
+        for carInfo in infos:
+          pos = carInfo["pos"]
+          if pos >= s0 and pos < s1:
+            hdg = odr.findHdg(id, pos)
+            ds = pos-s0
+            dw = delta[0]+delta[1]*ds+delta[2]*ds**2+delta[3]*ds**3
+            dw = dw if laneId != lid else dw/2
+            carId = carInfo["carId"]
+            ordId = carInfo["ordId"]
+            car = det.data["agents"][carId]
+            ord = None
+
+            if car['uid'] != None:
+              if ordId == 0:
+                ord = car['transform']
+              else:
+                ord = car['destinationPoint']
+            else:
+              if ordId == 0:
+                ord = car['transform']
+              else:
+                ord = car['waypoints'][ordId-1]
+            ord["position"]['x'] += dw*math.cos(hdg)
+            ord["position"]['z'] += dw*math.sin(hdg)
+            print(ord["position"], hdg, dw)
     return
 
 def setChange(id, lid, di, maxStep, sameHdg, hdg):

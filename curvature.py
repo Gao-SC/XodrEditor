@@ -16,7 +16,7 @@ def initRoadArc(id, md, st):
   params = []
   for bezier in beziers:
     param = bezierToParam(bezier)
-    l = getLength(param, 1)
+    l = odr.getLength(param, 1)
     param.append(x-getData(gs[0], 'x'))
     param.append(y-getData(gs[0], 'y'))
     params.append(param)
@@ -88,7 +88,7 @@ def editRoadArc(id, x0, y0, v0, h0, x1, y1, v1, h1, gi):
     x = getData(gs[i], 'x')+deltaX
     y = getData(gs[i], 'y')+deltaY
     param = bezierToParam(bezier)
-    l = getLength(param, 1)
+    l = odr.getLength(param, 1)
     param.append(x-getData(gs[0], 'x'))
     param.append(y-getData(gs[0], 'y'))
     params.append(param)
