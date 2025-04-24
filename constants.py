@@ -19,8 +19,6 @@ class cons:
   TAIL = 0
   HEAD = 1
 
-PATH = "D:\\Users\\cling\\Documents\\Homework\\Codes\\xodr_project\\test\\"
-
 getData = lambda a, b :float(a.get(b))
 setData = lambda a, b, c :a.set(b, str(c))
 

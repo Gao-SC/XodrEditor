@@ -6,6 +6,7 @@ import json
 import heapq
 import random
 
+import path
 import odrparser as odr
 from constants import *
 
@@ -16,7 +17,7 @@ data = None
 def readJson(name):
   print("FINDING THE TARGET ROADS...")
   try:
-    with open(PATH+'selected_map\\'+name+".json", 'r') as file:
+    with open(path.PATH+name+".json", 'r') as file:
       # 初始化
       global data
       data = json.load(file)
@@ -55,13 +56,18 @@ def readJson(name):
           carInfos[npc[0]][npc[1]].append({"carId": i, "ordId": j+1, "pos": npc[2]})
       for i in carInfos.values():
         print(i)
+      return True
   
   except FileNotFoundError:
     print("Error: File not found!")
+    return False
   except json.JSONDecodeError:
     print("Error: Invalid JSON format!")
-  print("Success!")
+    return False
 
+def writeJson():
+  with open(path.PATH+path.saveName+"_test.json", 'w') as file:
+    json.dump(data, file)
 def testModify():
   graph = buildGRAPH()
   rectifyGraph(graph)

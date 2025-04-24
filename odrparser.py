@@ -1,10 +1,9 @@
 import xml.etree.ElementTree as ET
 import copy
+import path
 from collections import deque, defaultdict
 from constants import *
 from scipy.optimize import root_scalar
-
-saveName = 'test'
 
 trees = deque()
 def updateTrees(new_val):
@@ -31,19 +30,17 @@ roadBackup = defaultdict(dict)
 laneBackup = defaultdict(dict)
 hdgs = defaultdict(dict)
 
-def write():
-  trees[-1].write(PATH+saveName+"_test.xodr", encoding="utf-8", xml_declaration=True)
+def writeXodr():
+  trees[-1].write(path.PATH+path.saveName+"_test.xodr", encoding="utf-8", xml_declaration=True)
   print('Already saved.')
 
 def openXodr(name):
   tree = None 
   try:
-    tree = ET.parse(PATH+'selected_map\\'+name+".xodr")
+    tree = ET.parse(path.PATH+name+".xodr")
   except Exception:
     print("File not found!")
     return False
-  global saveName
-  saveName = name
   clearTrees()
   updateTrees(tree)
   updateRoot(trees[-1].getroot())

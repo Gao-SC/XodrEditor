@@ -114,9 +114,9 @@ def editLaneWidth(id, lid, value, mode, smooth):
       s1 = getData(road, "length") if j == widthNum-1 else getData(widths[j+1], "sOffset")
 
       for laneId, infos in det.carInfos[id].items():
-        if int(laneId) < 0 < int(lid)  or int(laneId) > 0 > int(lid) :
+        if int(laneId) < 0 < int(lid) or int(laneId) > 0 > int(lid):
           continue
-        if int(lid) >= int(laneId) > 0 or int(lid) <= int(laneId) < 0:
+        if int(lid) > int(laneId) > 0 or int(lid) < int(laneId) < 0:
           continue
         for carInfo in infos:
           pos = carInfo["pos"]
@@ -142,7 +142,7 @@ def editLaneWidth(id, lid, value, mode, smooth):
                 ord = car['waypoints'][ordId-1]
             ord["position"]['x'] += dw*math.cos(hdg)
             ord["position"]['z'] += dw*math.sin(hdg)
-            print(ord["position"], hdg, dw)
+            print(hdg, dw)
     return
 
 def setChange(id, lid, di, maxStep, sameHdg, hdg):

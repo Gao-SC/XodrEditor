@@ -1,5 +1,6 @@
 import odrparser as odr
 import detector as det
+import path
 from constants import *
 from width import *
 from elevation import *
@@ -9,13 +10,15 @@ from curvature import *
 if __name__ == '__main__':
     plt.ion()
     while True:
-        openPath = input("Enter the xodr file path here: ")
-        if openPath == 'exit':
+        fileName = input("Enter the xodr file path here: ")
+        if fileName == 'exit':
             plt.ioff()
             break
-        if odr.openXodr(openPath) == False:
+        if odr.openXodr(fileName) == False:
             continue
-        det.readJson(openPath)
+        if det.readJson(fileName) == False:
+            continue
+        path.editSaveName(fileName)
 
         test, command = False, None
         while True:
@@ -26,9 +29,10 @@ if __name__ == '__main__':
 
             match command[0]:
                 case "save":
-                    odr.write()
+                    odr.writeXodr()
+                    det.writeJson()
                 case "close":
-                    odr.write()
+                    odr.writeXodr()
                     break
                 case "undo":
                     odr.redoTrees()
