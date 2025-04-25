@@ -11,7 +11,7 @@ import odrparser as odr
 from constants import *
 
 carInfos = defaultdict(dict)
-egoT, egoD = None, None
+egoTs, egoDs = [], []
 data = None
 
 def readJson(name):
@@ -22,6 +22,8 @@ def readJson(name):
       global data
       data = json.load(file)
       carInfos.clear()
+      egoTs.clear()
+      egoDs.clear()
       for id, road in odr.roads.items():
         carInfos[id] = defaultdict(dict)
         lanes = road.find("lanes").findall(".//lane")
@@ -29,34 +31,37 @@ def readJson(name):
           carInfos[id][lane.get('id')] = []
           
       agents = data["agents"]
-      tPos0 = agents[0]["transform"]["position"]
-      tRot0 = agents[0]["transform"]["rotation"]
-      dPos0 = agents[0]["destinationPoint"]["position"]
-      dRot0 = agents[0]["destinationPoint"]["rotation"]
+      for i in range(len(agents)):
+        tPos = agents[i]["transform"]["position"]
+        tRot = agents[i]["transform"]["rotation"]
+        carT = findRoad(tPos, tRot)
+        if carT != None:
+          carInfos[carT[0]][carT[1]].append({"carId": i, "ordId": 0, "pos": carT[2]})
+        else:
+            print("Not found: ", i, " ", 0)
 
-      global egoT
-      global egoD
-      egoT, egoD = findRoad(tPos0, tRot0), findRoad(dPos0, dRot0)
-      carInfos[egoT[0]][egoT[1]].append({"carId": 0, "ordId": 0, "pos": egoT[2]})
-      carInfos[egoD[0]][egoD[1]].append({"carId": 0, "ordId": 1, "pos": egoD[2]})
-      
-      npcCars = agents[1:]
-      for i in range(len(npcCars)):
-        tPos = npcCars[i]["transform"]["position"]
-        tRot = npcCars[i]["transform"]["rotation"]
-        tNpc = findRoad(tPos, tRot)
-        print("tNpc:", tNpc)
-        carInfos[tNpc[0]][tNpc[1]].append({"carId": i, "ordId": 0, "pos": tNpc[2]})
-
-        wayPoints = npcCars[i]["waypoints"]
-        for j in range(len(wayPoints)):
-          pos = wayPoints[j]["position"]
-          rot = wayPoints[j]["angle"]
-          npc = findRoad(pos, rot)
-          print(npc)
-          carInfos[npc[0]][npc[1]].append({"carId": i, "ordId": j+1, "pos": npc[2]})
-      for i in carInfos.values():
-        print(i)
+        if agents[i]["uid"] != "":
+          dPos = agents[i]["destinationPoint"]["position"]
+          dRot = agents[i]["destinationPoint"]["rotation"]
+          carD = findRoad(dPos, dRot)
+          egoTs.append(carT)
+          egoDs.append(carD)
+          if carD != None:
+            carInfos[carD[0]][carD[1]].append({"carId": i, "ordId": 1, "pos": carD[2]})
+          else:
+            print("Not found: ", i, " ", 1)
+          
+        else:
+          wayPoints = agents[i]["waypoints"]
+          for j in range(len(wayPoints)):
+            pos = wayPoints[j]["position"]
+            rot = wayPoints[j]["angle"]
+            point = findRoad(pos, rot)
+            if point != None:
+              carInfos[point[0]][point[1]].append({"carId": i, "ordId": j+1, "pos": point[2]})
+            else:
+              print("Not found: ", i, " ", j+1)
+        print("Done: ", i)
       return True
   
   except FileNotFoundError:
@@ -76,19 +81,27 @@ def testModify():
   rectifyGraph(graph)
 
   # 运行Dijkstra
-  paths = dijkstra(graph, 'start', 'end')
+  paths = []
+  for i in range(len(egoTs)):
+    x = dijkstra(graph, f"start_{i}", f"end_{i}")
+    print(x)
+    paths.extend(x)
+
   candidateRoads = []
   candidateLanes = []
-  egoT, egoD = carInfos[0][0], carInfos[0][1]
+  print(paths)
+  
   for cost, path in paths:
     for node in path:
       id, lid = "", ""
-      if node == "start":
+      data = node.split('_')
+      if data[0] == "start":
+        egoT = egoTs[int(data[1])]
         id, lid = egoT[0], egoT[1]
-      elif node == "end":
+      elif data[0] == "end":
+        egoD = egoDs[int(data[1])]
         id, lid = egoD[0], egoD[1]
       else:
-        data = node.split('_')
         id, lid = data[1], data[3]
       if id not in candidateRoads:
         candidateRoads.append(id)
@@ -125,7 +138,8 @@ def getOrd(carInfo):
   carId = carInfo["carId"]
   ordId = carInfo["ordId"]
   car = data["agents"][carId]
-  if car['uid'] != None:
+  print(carId, ordId)
+  if car['uid'] != "":
     if ordId == 0:
       return car['transform']
     else:
@@ -144,7 +158,7 @@ def findRoad(pos, rot):
     ans, ansL = projectPoint(road, pos['x'], pos['z'])
     if ans == float('inf'):
       continue
-    print("ans: ", ans, "ansL: ", ansL)
+    ## if id == "8" or id == "24": print("ans: ", id, ans,ansL) ## THERE IS AN UNFIXABLE BUG
     lws, rws = getLanesWidth(road, ansL)
   
     if ans <= 0: #道路左侧
@@ -168,16 +182,34 @@ def buildGRAPH():
   for id, road in odr.roads.items():
     length = getData(road, 'length')
     section = road.find('lanes').find('laneSection')
+    
+    lws0, rws0 = getLanesWidth(road, 0)
+    lws1, rws1 = getLanesWidth(road, length)
+
     for lane in section.findall('.//lane'):
       lid = lane.get('id')
       if lid == "0":
         continue
       tailNode = f"road_{id}_lane_{lid}_0"
       headNode = f"road_{id}_lane_{lid}_1"
-      if int(lid) < 0: #右侧车道
+      if int(lid) < 0: # 右侧车道
         graph[tailNode][headNode] = length
       else:
         graph[headNode][tailNode] = length
+      ## 变道
+      for otherLane in section.findall('.//lane'):
+        otherLid = lane.get('id')
+        if otherLid == "0" or otherLid == lid or int(otherLid)*int(lid) < 0:
+          continue
+        otherTailNode = f"road_{id}_lane_{otherLid}_0"
+        otherHeadNode = f"road_{id}_lane_{otherLid}_1"
+        if int(lid) < 0: # 右侧车道
+          graph[tailNode][otherTailNode] = abs(rws0[-int(lid)]-rws0[-int(otherLid)])
+          graph[headNode][otherHeadNode] = abs(rws1[-int(lid)]-rws1[-int(otherLid)])
+        else:
+          graph[tailNode][otherTailNode] = abs(lws0[ int(lid)]-lws0[ int(otherLid)])
+          graph[headNode][otherHeadNode] = abs(lws1[ int(lid)]-lws1[ int(otherLid)])
+    
       
   for id, item in odr.laneConnections.items():
     for lid, item_ in item.items():
@@ -195,30 +227,34 @@ def buildGRAPH():
   return graph
 
 def rectifyGraph(graph):
-  egoT, egoD = carInfos[0][0], carInfos[0][1]
-  road0 = odr.roads[egoT[0]]
-  length0 = getData(road0, 'length')
-  if int(egoT[1]) < 0: # 道路右侧
-    graph['start'][f"road_{egoT[0]}_lane_{egoT[1]}_1"] = length0-egoT[2]
-    graph[f"road_{egoT[0]}_lane_{egoT[1]}_0"]['start'] = egoT[2]
-  else:
-    graph['start'][f"road_{egoT[0]}_lane_{egoT[1]}_0"] = egoT[2]
-    graph[f"road_{egoT[0]}_lane_{egoT[1]}_1"]['start'] = length0-egoT[2]
+  for i in range(len(egoTs)):
+    egoT, egoD = egoTs[i], egoDs[i]
+    if egoT == None or egoD == None:
+      continue
 
-  road1 = odr.roads[egoD[0]]
-  length1 = getData(road1, 'length')
-  if int(egoD[1]) < 0: # 道路右侧
-    graph['end'][f"road_{egoD[0]}_lane_{egoD[1]}_1"] = length1-egoD[2]
-    graph[f"road_{egoD[0]}_lane_{egoD[1]}_0"]['end'] = egoD[2]
-  else:
-    graph['end'][f"road_{egoD[0]}_lane_{egoD[1]}_0"] = egoD[2]
-    graph[f"road_{egoD[0]}_lane_{egoD[1]}_1"]['end'] = length1-egoD[2]
-  
-  if egoT[0] == egoD[0] and egoT[1] == egoD[1]:
-    if (int(egoT[1]) > 0) ^ (egoT[2] < egoD[2]):
-      graph['start']['end'] = abs(egoT[2]-egoD[2])
+    road0 = odr.roads[egoT[0]]
+    length0 = getData(road0, 'length')
+    if int(egoT[1]) < 0: # 道路右侧
+      graph[f"start_{i}"][f"road_{egoT[0]}_lane_{egoT[1]}_1"] = length0-egoT[2]
+      graph[f"road_{egoT[0]}_lane_{egoT[1]}_0"][f"start_{i}"] = egoT[2]
     else:
-      graph['end']['start'] = abs(egoT[2]-egoD[2])
+      graph[f"start_{i}"][f"road_{egoT[0]}_lane_{egoT[1]}_0"] = egoT[2]
+      graph[f"road_{egoT[0]}_lane_{egoT[1]}_1"][f"start_{i}"] = length0-egoT[2]
+
+    road1 = odr.roads[egoD[0]]
+    length1 = getData(road1, 'length')
+    if int(egoD[1]) < 0: # 道路右侧
+      graph[f"end_{i}"][f"road_{egoD[0]}_lane_{egoD[1]}_1"] = length1-egoD[2]
+      graph[f"road_{egoD[0]}_lane_{egoD[1]}_0"][f"end_{i}"] = egoD[2]
+    else:
+      graph[f"end_{i}"][f"road_{egoD[0]}_lane_{egoD[1]}_0"] = egoD[2]
+      graph[f"road_{egoD[0]}_lane_{egoD[1]}_1"][f"end_{i}"] = length1-egoD[2]
+    
+    if egoT[0] == egoD[0] and egoT[1] == egoD[1]:
+      if (int(egoT[1]) > 0) ^ (egoT[2] < egoD[2]):
+        graph[f"start_{i}"][f"end_{i}"] = abs(egoT[2]-egoD[2])
+      else:
+        graph[f"end_{i}"][f"start_{i}"] = abs(egoT[2]-egoD[2])
 
 def dijkstra(graph, start, end, k=3):
   heap = []
@@ -244,9 +280,12 @@ def dijkstra(graph, start, end, k=3):
         new_path.append(neighbor)
         heapq.heappush(heap, (cost+weight, new_path))
     
-    for i in range(len(paths)):
-      if i >= k or paths[i][0] > paths[0][0]*k:
-        return paths[:i]
+  if paths == []:
+    return [[0, [start, end]]]
+  
+  for i in range(len(paths)):
+    if i >= k or paths[i][0] > paths[0][0]*k:
+      return paths[:i]
 
 def projectPoint(road, tarX, tarY):
   gs = road.find('planView').findall('geometry')
@@ -298,7 +337,7 @@ def projectPoint(road, tarX, tarY):
         dy_dt = du_dt*sinH + dv_dt*cosH
         return (x_t-tarX)*dx_dt + (y_t-tarY)*dy_dt
       
-      epsilon, N = 1e-5, 1000
+      epsilon, N = 1e-4, 100
       roots = []
       t_values = np.linspace(0, 1, N+1)
       f_values = [F(t) for t in t_values]

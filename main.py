@@ -24,6 +24,8 @@ if __name__ == '__main__':
         while True:
             if not test:
                 command = input().split()
+                if command == []:
+                    continue
             else:
                 test = False
 
@@ -37,7 +39,7 @@ if __name__ == '__main__':
                 case "undo":
                     odr.redoTrees()
                 case "saveName":
-                    odr.saveName = command[1]
+                    path.saveName = command[1]
                 case "test":
                     command = det.testModify()
                     if command[0] == "curve":

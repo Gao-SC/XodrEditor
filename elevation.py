@@ -56,7 +56,7 @@ def setRoadSlope(id, value, move):
   for i in range(elevaNum):
     e = elevations[i]
     s0 = getData(e, 's')
-    s1 = getData(road, "length") if i == elevaNum-1 else getData(elevations[i+1], "sOffset")
+    s1 = getData(road, "length") if i == elevaNum-1 else getData(elevations[i+1], "s")
 
     setData(e, 'b', getData(e, 'b')+slope)
     if move == cons.MOVE_BOTH:
@@ -78,7 +78,7 @@ def setRoadSlope(id, value, move):
 
           ord = det.getOrd(carInfo)
           ord["position"]['y'] += de
-          if ord["angle"] != None:
+          if ord.get("angle") != None:
             ord["angle"]["x"] += math.atan(slope)
           else:
             ord["rotation"]["x"] += math.atan(slope)

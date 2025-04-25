@@ -108,7 +108,7 @@ def findHdg(id, pos):
   gs = road.find('planView').findall('geometry')
   for i in range(len(gs)):
     s0 = getData(gs[i], 's')
-    s1 = getData(road, 'length') if i == len(gs) else getData(gs[i+1], 's')
+    s1 = getData(road, 'length') if i == len(gs)-1 else getData(gs[i+1], 's')
     if s0 <= pos < s1:
       if gs[i].find('line') != None:
         return getData(gs[i], 'hdg')

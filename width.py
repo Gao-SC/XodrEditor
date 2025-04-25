@@ -95,7 +95,7 @@ def setLaneWidth(id, lid, value, mode, smooth):
           break
       
     for j in range(widthNum):
-      delta = None
+      delta = [0, 0, 0, 0]
       match (mode, smooth):
         case ('add', x):
           delta = setWidth(widths[j], value, 'add')
