@@ -64,13 +64,13 @@ def editRoadWidth(id, value, smooth=0, maxStep=0, sameHdg=0, laneIds=[]):
   for rid, rEdit in odr.laneEdits.items():
     for lid, info in rEdit.items():
       if info == cons.TAIL_EDITED and smooth:
-        editLaneWidth(rid, lid, value, 'addt', smooth)
+        setLaneWidth(rid, lid, value, 'addt', smooth)
       elif info == cons.HEAD_EDITED and smooth:
-        editLaneWidth(rid, lid, value, 'addh', smooth)
+        setLaneWidth(rid, lid, value, 'addh', smooth)
       elif info == cons.BOTH_EDITED:
-        editLaneWidth(rid, lid, value, 'add' , smooth)
+        setLaneWidth(rid, lid, value, 'add' , smooth)
 
-def editLaneWidth(id, lid, value, mode, smooth):
+def setLaneWidth(id, lid, value, mode, smooth):
   print("here")
   road = odr.roads[id]
   length = getData(road, 'length')
@@ -125,21 +125,8 @@ def editLaneWidth(id, lid, value, mode, smooth):
             ds = pos-s0
             dw = delta[0]+delta[1]*ds+delta[2]*ds**2+delta[3]*ds**3
             dw = dw if laneId != lid else dw/2
-            carId = carInfo["carId"]
-            ordId = carInfo["ordId"]
-            car = det.data["agents"][carId]
-            ord = None
-
-            if car['uid'] != None:
-              if ordId == 0:
-                ord = car['transform']
-              else:
-                ord = car['destinationPoint']
-            else:
-              if ordId == 0:
-                ord = car['transform']
-              else:
-                ord = car['waypoints'][ordId-1]
+            
+            ord = det.getOrd(carInfo)
             ord["position"]['x'] += dw*math.cos(hdg)
             ord["position"]['z'] += dw*math.sin(hdg)
             print(hdg, dw)

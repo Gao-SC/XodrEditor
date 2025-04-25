@@ -1,59 +1,18 @@
 import copy
 import odrparser as odr
+import detector as det
 from collections import deque
 from constants import *
 
-def editRoadSlope(id, value, mode, move, maxStep=0, sameHdg=0, new = True):
+def editRoadSlope(id, value, mode, move, maxStep=0, sameHdg=0):
   if mode == 'mul' and move == cons.MOVE_BOTH:
     print('Params error!')
     return
-  slope, eleva = value, value
-  
-  road = odr.roads[id]
-  elevations = road.find('elevationProfile').findall('elevation')
-  geometries = road.find('planView').findall('geometry')
-  size = len(geometries)
-  length = getData(road, 'length')
 
-  if mode == 'add':
-    if move == cons.MOVE_TAIL:
-      slope = value/length*-1
-    elif move == cons.MOVE_HEAD:
-      slope = value/length
-    else:
-      slope = 0
-  elif mode == 'mul':
-    if move == cons.MOVE_TAIL:
-      eleva = value*length*-1
-    elif move == cons.MOVE_HEAD:
-      eleva = value*length
-    
-  for i in range(size):
-    g = geometries[i]
-    e = elevations[i]
-    s = getData(g, 's')
-
-    if mode == 'add':
-      setData(e, 'b', getData(e, 'b')+slope)
-      if move == cons.MOVE_BOTH:
-        setData(e, 'a', getData(e, 'a')+eleva)
-      elif move == cons.MOVE_TAIL:
-        setData(e, 'a', getData(e, 'a')+slope*(s-length))
-      elif move == cons.MOVE_HEAD:
-        setData(e, 'a', getData(e, 'a')+slope*s)
-      
-    elif mode == 'mul':
-      setData(e, 'b', getData(e, 'b')+slope)
-      if move == cons.MOVE_TAIL:
-        setData(e, 'a', getData(e, 'a')+slope*(s-length))
-      elif move == cons.MOVE_HEAD:
-        setData(e, 'a', getData(e, 'a')+slope*s)
-
-  if not new:
-    return
   odr.roadEdits = copy.deepcopy(odr.roadBackup)
   odr.roadEdits[id] = cons.BOTH_LOCKED
-
+  
+  road = odr.roads[id]
   link = road.find('link')
   pre = link.find('predecessor')
   suc = link.find('successor')
@@ -69,19 +28,61 @@ def editRoadSlope(id, value, mode, move, maxStep=0, sameHdg=0, new = True):
     hdg = odr.hdgs[id][1]
     setChange(id, cons.HEAD, maxStep, sameHdg, hdg)
 
+  value = value if mode != 'mul' else value*getData(road, 'length')
   for r in odr.root.iter('road'):
     newId = r.get('id')
     num = odr.roadEdits[newId]
     if num == cons.TAIL_EDITED or num == cons.TAIL_EDITED2:   # change tail
-      # print("move tail" + newId)
-      editRoadSlope(newId, eleva, 'add', cons.MOVE_TAIL, new=False)
+      setRoadSlope(newId, value, cons.MOVE_TAIL)
     elif num == cons.HEAD_EDITED or num == cons.HEAD_EDITED2: # change head
-      # print("move head" + newId)
-      editRoadSlope(newId, eleva, 'add', cons.MOVE_HEAD, new=False)
+      setRoadSlope(newId, value, cons.MOVE_HEAD)
     elif num == cons.BOTH_EDITED:                             # change both
-      # print("move both" + newId)
-      editRoadSlope(newId, eleva, 'add', cons.MOVE_BOTH, new=False)
+      setRoadSlope(newId, value, cons.MOVE_BOTH)
 
+def setRoadSlope(id, value, move):
+  print(id, value, move)
+  
+  road = odr.roads[id]
+  elevations = road.find('elevationProfile').findall('elevation')
+  elevaNum = len(elevations)
+  length = getData(road, 'length')
+
+  slope = 0
+  if move == cons.MOVE_TAIL:
+    slope = value/length*-1
+  elif move == cons.MOVE_HEAD:
+    slope = value/length
+    
+  for i in range(elevaNum):
+    e = elevations[i]
+    s0 = getData(e, 's')
+    s1 = getData(road, "length") if i == elevaNum-1 else getData(elevations[i+1], "sOffset")
+
+    setData(e, 'b', getData(e, 'b')+slope)
+    if move == cons.MOVE_BOTH:
+      setData(e, 'a', getData(e, 'a')+value)
+    elif move == cons.MOVE_TAIL:
+      setData(e, 'a', getData(e, 'a')+slope*(s0-length))
+    elif move == cons.MOVE_HEAD:
+      setData(e, 'a', getData(e, 'a')+slope*s0)
+
+    for infos in det.carInfos[id].values():
+      for carInfo in infos:
+        pos = carInfo["pos"]
+        if pos >= s0 and pos < s1:
+          de = value
+          if move == cons.MOVE_TAIL:
+            de = slope*(s0-length)
+          elif move == cons.MOVE_HEAD:
+            de = slope*s0
+
+          ord = det.getOrd(carInfo)
+          ord["position"]['y'] += de
+          if ord["angle"] != None:
+            ord["angle"]["x"] += math.atan(slope)
+          else:
+            ord["rotation"]["x"] += math.atan(slope)
+  
 def lockChange(direction, id):
   for info in odr.roadConnections[id][direction]:
     if info[1]:

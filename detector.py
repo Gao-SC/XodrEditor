@@ -45,6 +45,7 @@ def readJson(name):
         tPos = npcCars[i]["transform"]["position"]
         tRot = npcCars[i]["transform"]["rotation"]
         tNpc = findRoad(tPos, tRot)
+        print("tNpc:", tNpc)
         carInfos[tNpc[0]][tNpc[1]].append({"carId": i, "ordId": 0, "pos": tNpc[2]})
 
         wayPoints = npcCars[i]["waypoints"]
@@ -67,7 +68,9 @@ def readJson(name):
 
 def writeJson():
   with open(path.PATH+path.saveName+"_test.json", 'w') as file:
-    json.dump(data, file)
+    json.dump(data, file, indent=4)
+    file.write('\n')
+
 def testModify():
   graph = buildGRAPH()
   rectifyGraph(graph)
@@ -118,6 +121,22 @@ def testModify():
   print(command)
   return command
 
+def getOrd(carInfo):
+  carId = carInfo["carId"]
+  ordId = carInfo["ordId"]
+  car = data["agents"][carId]
+  if car['uid'] != None:
+    if ordId == 0:
+      return car['transform']
+    else:
+      return car['destinationPoint']
+  else:
+    if ordId == 0:
+      return car['transform']
+    else:
+      return car['waypoints'][ordId-1]
+
+## PRIVATE METHOD
 
 def findRoad(pos, rot):
   candidateRoads = []
@@ -125,6 +144,7 @@ def findRoad(pos, rot):
     ans, ansL = projectPoint(road, pos['x'], pos['z'])
     if ans == float('inf'):
       continue
+    print("ans: ", ans, "ansL: ", ansL)
     lws, rws = getLanesWidth(road, ansL)
   
     if ans <= 0: #道路左侧
@@ -142,8 +162,6 @@ def findRoad(pos, rot):
     return candidateRoads[0][:3]
   else:
     return None
-
-## PRIVATE METHOD
 
 def buildGRAPH():
   graph = defaultdict(dict)
@@ -236,7 +254,6 @@ def projectPoint(road, tarX, tarY):
   ans, ansL = float('inf'), 0
   if math.hypot(x0-tarX, y0-tarY) > getData(road, 'length')*2:
     return ans, ansL
-  length = 0
 
   for g in gs:
     h    = getData(g, 'hdg')
@@ -250,6 +267,12 @@ def projectPoint(road, tarX, tarY):
       dis = abs(k*tarX+b-tarY)/math.sqrt(k**2+1)
       x_cross = (b_-b)/(k-k_)
       pos = (x_cross-x)/math.cos(h)
+
+      epsilon = 1e-2
+      if  -epsilon < pos < 0:
+        pos = 0
+      if l < pos < l+epsilon:
+        pos = l
       if pos < 0 or pos > l:
         continue
       if math.cos(h)*(tarY-y) > math.sin(h)*(tarX-x):
@@ -262,20 +285,20 @@ def projectPoint(road, tarX, tarY):
       cosH, sinH = math.cos(h), math.sin(h)
 
       def compute_uv(t):
-        u = x + bU*t + cU*t**2 + dU*t**3
-        v = y + bV*t + cV*t**2 + dV*t**3
+        u = bU*t + cU*t**2 + dU*t**3
+        v = bV*t + cV*t**2 + dV*t**3
         du_dt = bU + 2*cU*t + 3*dU*t**2
         dv_dt = bV + 2*cV*t + 3*dV*t**2
         return u, v, du_dt, dv_dt
       def F(t):
         u, v, du_dt, dv_dt = compute_uv(t)
-        x_t = u*cosH - v*sinH
-        y_t = u*sinH + v*cosH
+        x_t = x + u*cosH - v*sinH
+        y_t = y + u*sinH + v*cosH
         dx_dt = du_dt*cosH - dv_dt*sinH
         dy_dt = du_dt*sinH + dv_dt*cosH
         return (x_t-tarX)*dx_dt + (y_t-tarY)*dy_dt
       
-      epsilon, N = 1e-6, 10000
+      epsilon, N = 1e-5, 1000
       roots = []
       t_values = np.linspace(0, 1, N+1)
       f_values = [F(t) for t in t_values]
@@ -300,32 +323,38 @@ def projectPoint(road, tarX, tarY):
           continue
       
       roots = np.unique(np.round(roots, 5))
-      valid_roots = [t for t in roots if 0 <= t <= 1]
-      valid_roots = np.clip(valid_roots, 0, 1)
-      valid_roots = np.unique(valid_roots)
-            
+      
+      validRoots = [t for t in roots if -epsilon <= t <= 1+epsilon]
+      validRoots = np.clip(validRoots, 0, 1)
+      validRoots = np.unique(validRoots)
+      for tRoot in validRoots:
+        if t < 0: t = 0
+        if t > 1: t = 1
+
       dis, T = float('inf'), 0
-      for t_root in valid_roots:
-        u, v, du_dt, dv_dt = compute_uv(t_root)
-        x = u*cosH - v*sinH
-        y = u*sinH + v*cosH
+      for tRoot in validRoots:
+        u, v, du_dt, dv_dt = compute_uv(tRoot)
+        x_t = x + u*cosH - v*sinH
+        y_t = y + u*sinH + v*cosH
         dx_dt = du_dt*cosH - dv_dt*sinH
         dy_dt = du_dt*sinH + dv_dt*cosH
-        if abs(dis) > math.hypot(x-tarX, y-tarY):
-          T = t_root
-          dis = math.hypot(x-tarX, y-tarY)
-          if dx_dt*(tarY-y) > dy_dt*(tarX-x):
+        if abs(dis) > math.hypot(x_t-tarX, y_t-tarY):
+          T = tRoot
+          dis = math.hypot(x_t-tarX, y_t-tarY)
+          if dx_dt*(tarY-y_t) > dy_dt*(tarX-x_t):
             dis *= -1
       pos = odr.getLength([bU, cU, dU, bV, cV, dV], T)
 
     if abs(ans) > abs(dis):
       ans = dis
-      ansL = pos+length
-    length += l
-
+      ansL = pos+getData(g, "s")
   return ans, ansL
 
 def getLanesWidth(road, pos):
+  l = getData(road, "length")
+  if pos < 0: pos = 0
+  if pos > l: pos = l
+  
   lanes = road.find('lanes').findall('.//lane')
   lws, rws = [], []
 
@@ -337,7 +366,7 @@ def getLanesWidth(road, pos):
     widths = lane.findall('width')
     for i in range(1, len(widths)):
       sOffset = getData(widths[i], 'sOffset')
-      if sOffset > pos:
+      if sOffset >= pos:
         w = widths[i-1]
         pos -= getData(w, 'sOffset')
         a, b = getData(w, 'a'), getData(w, 'b')

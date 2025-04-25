@@ -12,9 +12,9 @@ class cons:
   HEAD_LOCKED = 7
   BOTH_LOCKED = 8
 
-  MOVE_BOTH = 0
-  MOVE_TAIL = 1
-  MOVE_HEAD = 2
+  MOVE_TAIL = 0
+  MOVE_HEAD = 1
+  MOVE_BOTH = 2
 
   TAIL = 0
   HEAD = 1
