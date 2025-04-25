@@ -5,6 +5,7 @@ from constants import *
 from width import *
 from elevation import *
 from curvature import *
+from test import *
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
@@ -35,13 +36,15 @@ if __name__ == '__main__':
                     det.writeJson()
                 case "close":
                     odr.writeXodr()
+                    det.writeJson()
                     break
                 case "undo":
-                    odr.redoTrees()
+                    odr.redoData()
+                    ## det.redoData()
                 case "saveName":
                     path.saveName = command[1]
                 case "test":
-                    command = det.testModify()
+                    command = testModify()
                     if command[0] == "curve":
                         param = command[1].split('=')
                         gsize = initRoadArc(id=param[1], md=0.01, st=1.0)

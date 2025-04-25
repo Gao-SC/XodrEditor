@@ -27,8 +27,9 @@ def editRoadSlope(id, value, mode, move, maxStep=0, sameHdg=0):
   if move != cons.MOVE_TAIL and suc != None:
     hdg = odr.hdgs[id][1]
     setChange(id, cons.HEAD, maxStep, sameHdg, hdg)
-
+  
   value = value if mode != 'mul' else value*getData(road, 'length')
+  setRoadSlope(id, value, move)
   for r in odr.root.iter('road'):
     newId = r.get('id')
     num = odr.roadEdits[newId]

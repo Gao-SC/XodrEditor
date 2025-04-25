@@ -71,7 +71,6 @@ def editRoadWidth(id, value, smooth=0, maxStep=0, sameHdg=0, laneIds=[]):
         setLaneWidth(rid, lid, value, 'add' , smooth)
 
 def setLaneWidth(id, lid, value, mode, smooth):
-  print("here")
   road = odr.roads[id]
   length = getData(road, 'length')
   section = road.find('lanes').find('laneSection')
@@ -127,9 +126,14 @@ def setLaneWidth(id, lid, value, mode, smooth):
             dw = dw if laneId != lid else dw/2
             
             ord = det.getOrd(carInfo)
-            ord["position"]['x'] += dw*math.cos(hdg)
-            ord["position"]['z'] += dw*math.sin(hdg)
-            print(hdg, dw)
+            if int(lid) < 0:
+              ord["position"]['x'] += dw*math.sin(hdg)
+              ord["position"]['z'] -= dw*math.cos(hdg)
+              carInfo["dis"] += dw
+            else:
+              ord["position"]['x'] -= dw*math.sin(hdg)
+              ord["position"]['z'] += dw*math.cos(hdg)
+              carInfo["dis"] -= dw
     return
 
 def setChange(id, lid, di, maxStep, sameHdg, hdg):

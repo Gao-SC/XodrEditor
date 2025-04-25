@@ -5,16 +5,16 @@ from collections import deque, defaultdict
 from constants import *
 from scipy.optimize import root_scalar
 
-trees = deque()
+data = deque()
 def updateTrees(new_val):
-  trees.append(copy.deepcopy(new_val))
-  if len(trees) > 256:
-    trees.popleft()
-def redoTrees():
-  if len(trees) > 1:
-    trees.pop()
+  data.append(copy.deepcopy(new_val))
+  if len(data) > 256:
+    data.popleft()
+def redoData():
+  if len(data) > 1:
+    data.pop()
 def clearTrees():
-  trees.clear()
+  data.clear()
 
 root = None
 def updateRoot(new_val):
@@ -31,7 +31,7 @@ laneBackup = defaultdict(dict)
 hdgs = defaultdict(dict)
 
 def writeXodr():
-  trees[-1].write(path.PATH+path.saveName+"_test.xodr", encoding="utf-8", xml_declaration=True)
+  data[-1].write(path.PATH+path.saveName+"_test.xodr", encoding="utf-8", xml_declaration=True)
   print('Already saved.')
 
 def openXodr(name):
@@ -43,7 +43,7 @@ def openXodr(name):
     return False
   clearTrees()
   updateTrees(tree)
-  updateRoot(trees[-1].getroot())
+  updateRoot(data[-1].getroot())
   updateData()
   return True
 
@@ -80,8 +80,8 @@ def updateData():
 
 def pushNewTree():
   roads.clear()
-  updateTrees(trees[-1])
-  updateRoot(trees[-1].getroot())
+  updateTrees(data[-1])
+  updateRoot(data[-1].getroot())
   for road in root.iter('road'):
     id = road.get('id')
     roads[id] = road

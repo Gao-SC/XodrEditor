@@ -4,7 +4,6 @@ import numpy as np
 import math
 import json
 import heapq
-import random
 
 import path
 import odrparser as odr
@@ -36,9 +35,9 @@ def readJson(name):
         tRot = agents[i]["transform"]["rotation"]
         carT = findRoad(tPos, tRot)
         if carT != None:
-          carInfos[carT[0]][carT[1]].append({"carId": i, "ordId": 0, "pos": carT[2]})
+          carInfos[carT[0]][carT[1]].append({"carId": i, "ordId": 0, "pos": carT[2], "dis": carT[3]})
         else:
-            print("Not found: ", i, " ", 0)
+          print("Not found: ", i, " ", 0)
 
         if agents[i]["uid"] != "":
           dPos = agents[i]["destinationPoint"]["position"]
@@ -47,7 +46,7 @@ def readJson(name):
           egoTs.append(carT)
           egoDs.append(carD)
           if carD != None:
-            carInfos[carD[0]][carD[1]].append({"carId": i, "ordId": 1, "pos": carD[2]})
+            carInfos[carD[0]][carD[1]].append({"carId": i, "ordId": 1, "pos": carD[2], "dis": carD[3]})
           else:
             print("Not found: ", i, " ", 1)
           
@@ -58,7 +57,7 @@ def readJson(name):
             rot = wayPoints[j]["angle"]
             point = findRoad(pos, rot)
             if point != None:
-              carInfos[point[0]][point[1]].append({"carId": i, "ordId": j+1, "pos": point[2]})
+              carInfos[point[0]][point[1]].append({"carId": i, "ordId": j+1, "pos": point[2], "dis": point[3]})
             else:
               print("Not found: ", i, " ", j+1)
         print("Done: ", i)
@@ -76,69 +75,10 @@ def writeJson():
     json.dump(data, file, indent=4)
     file.write('\n')
 
-def testModify():
-  graph = buildGRAPH()
-  rectifyGraph(graph)
-
-  # 运行Dijkstra
-  paths = []
-  for i in range(len(egoTs)):
-    x = dijkstra(graph, f"start_{i}", f"end_{i}")
-    print(x)
-    paths.extend(x)
-
-  candidateRoads = []
-  candidateLanes = []
-  print(paths)
-  
-  for cost, path in paths:
-    for node in path:
-      id, lid = "", ""
-      data = node.split('_')
-      if data[0] == "start":
-        egoT = egoTs[int(data[1])]
-        id, lid = egoT[0], egoT[1]
-      elif data[0] == "end":
-        egoD = egoDs[int(data[1])]
-        id, lid = egoD[0], egoD[1]
-      else:
-        id, lid = data[1], data[3]
-      if id not in candidateRoads:
-        candidateRoads.append(id)
-      if [id, lid] not in candidateLanes:
-        candidateLanes.append([id, lid])
-
-  method = random.randint(0, 2)
-  command = ""
-  list1 = [-1, 1]
-  match method:
-    case 0: # width
-      target = random.randint(0, len(candidateLanes)-1)
-      id = candidateLanes[target][0]
-      li = candidateLanes[target][1]
-      v = (1+1*random.random())*random.choice(list1)    
-      command = f"width id={id} li={li} v={v} s=1 sh=1 ms={1<<30}".split()
-    case 1: # slope
-      target = random.randint(0, len(candidateRoads)-1)
-      id = candidateRoads[target]
-      v = (1+1*random.random())*random.choice(list1)
-      mv = random.randint(0, 2)
-      command = f"slope id={id} v={v} mv={mv} sh=1 ms={1<<30}".split()
-    case 2: # curve
-      target = random.randint(0, len(candidateRoads)-1)
-      id = candidateRoads[target]
-      v0 = (0.2+0.2*random.random())*random.choice(list1)
-      v1 = (0.2+0.2*random.random())*random.choice(list1)
-      command = f"curve id={id} v0={v0} v1={v1}".split()
-  
-  print(command)
-  return command
-
 def getOrd(carInfo):
   carId = carInfo["carId"]
   ordId = carInfo["ordId"]
   car = data["agents"][carId]
-  print(carId, ordId)
   if car['uid'] != "":
     if ordId == 0:
       return car['transform']
@@ -158,22 +98,21 @@ def findRoad(pos, rot):
     ans, ansL = projectPoint(road, pos['x'], pos['z'])
     if ans == float('inf'):
       continue
-    ## if id == "8" or id == "24": print("ans: ", id, ans,ansL) ## THERE IS AN UNFIXABLE BUG
     lws, rws = getLanesWidth(road, ansL)
   
     if ans <= 0: #道路左侧
       for i in range(len(lws)):
         if ans > lws[i]:
-          candidateRoads.append([id, str(i+1),  ansL, abs(ans)])
+          candidateRoads.append([id, str(i+1),  ansL, ans])
           break
     else:
       for i in range(len(rws)):
         if ans < rws[i]:
-          candidateRoads.append([id, str(-i-1), ansL, abs(ans)])
+          candidateRoads.append([id, str(-i-1), ansL, ans])
           break
   if candidateRoads:
-    candidateRoads.sort(key=lambda x: x[3])
-    return candidateRoads[0][:3]
+    candidateRoads.sort(key=lambda x: abs(x[3]))
+    return candidateRoads[0]
   else:
     return None
 
@@ -279,13 +218,15 @@ def dijkstra(graph, start, end, k=3):
         new_path = list(path)
         new_path.append(neighbor)
         heapq.heappush(heap, (cost+weight, new_path))
-    
+  
+  print(paths)
   if paths == []:
-    return [[0, [start, end]]]
+    return [(0, [start, end])]
   
   for i in range(len(paths)):
     if i >= k or paths[i][0] > paths[0][0]*k:
       return paths[:i]
+  return paths
 
 def projectPoint(road, tarX, tarY):
   gs = road.find('planView').findall('geometry')

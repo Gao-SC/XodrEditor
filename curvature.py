@@ -2,6 +2,7 @@ import xml.etree.ElementTree as ET
 from scipy.optimize import least_squares
 from scipy.optimize import root_scalar
 import odrparser as odr
+import detector as det
 from constants import *
 
 def initRoadArc(id, md, st):
@@ -281,6 +282,33 @@ def rectifyRoadData(road, length_new):
     setData(width, 'b', getData(width, 'b')/k_l)
     setData(width, 'c', getData(width, 'c')/(k_l**2))
     setData(width, 'd', getData(width, 'd')/(k_l**3))
+
+  gs = road.find('planView').findall('geometry')
+  for infos in det.carInfos[id].values():
+    for carInfo in infos:
+      carInfo["pos"] *= k_l
+      for i in range(len(gs)):
+        s0 = getData(gs[i], "s")
+        s1 = getData(road, "length") if i == len(gs)-1 else getData(gs[i+1], "s")
+        
+        if carInfo["pos"] >= s0 and carInfo["pos"] < s1:
+          hdg  = getData(gs[i], 'hdg')
+          x, y = getData(gs[i], 'x'), getData(gs[i], 'y')
+          poly = gs[i].find('paramPoly3')
+          bU, cU, dU = getData(poly, 'bU'), getData(poly, 'cU'), getData(poly, 'dU')
+          bV, cV, dV = getData(poly, 'bV'), getData(poly, 'cV'), getData(poly, 'dV')
+          t = carInfo["pos"]-s0
+          u = bU*t+cU*t**2+dU*t**3
+          v = bV*t+cV*t**2+dV*t**3
+          x += u*math.cos(hdg)-v*math.sin(hdg)
+          y += u*math.sin(hdg)+v*math.cos(hdg)
+          hdg += math.atan2(bV+2*cV*t+3*dV*t**2, bU+2*cU*t+3*dU*t**2)
+          x += carInfo["dis"]*math.sin(hdg)
+          y -= carInfo["dis"]*math.cos(hdg)
+          ord = det.getOrd(carInfo)
+          ord["position"]['x'] = x
+          ord["position"]['z'] = y
+          break
 
 def bezierToParam(param):
   x3, y3, l0, l1, h0, h1 = param
