@@ -1,6 +1,7 @@
 from scipy.optimize import root_scalar
-from collections import defaultdict
+from collections import deque, defaultdict
 import numpy as np
+import copy
 import math
 import json
 import heapq
@@ -9,58 +10,45 @@ import path
 import odrparser as odr
 from constants import *
 
-carInfos = defaultdict(dict)
+data = deque()
+def addData(new_val):
+  data.append(copy.deepcopy(new_val))
+  if len(data) > 256:
+    data.popleft()
+carData = deque()
+def addCarData(new_val):
+  carData.append(copy.deepcopy(new_val))
+  if len(carData) > 256:
+    carData.popleft()
+
+def redoData():
+  if len(data) > 1:
+    data.pop()
+    carData.pop()
+def clearData():
+  data.clear()
+  carData.clear()
+
 egoTs, egoDs = [], []
-data = None
+
+def clearAll():
+  data.clear()
+  carData.clear()
+  egoTs.clear()
+  egoDs.clear()
+
+def pushNewData():
+  addData(data[-1])
+  addCarData(carData[-1])
 
 def readJson(name):
   print("FINDING THE TARGET ROADS...")
+  clearAll()
   try:
     with open(path.PATH+name+".json", 'r') as file:
       # 初始化
-      global data
-      data = json.load(file)
-      carInfos.clear()
-      egoTs.clear()
-      egoDs.clear()
-      for id, road in odr.roads.items():
-        carInfos[id] = defaultdict(dict)
-        lanes = road.find("lanes").findall(".//lane")
-        for lane in lanes:
-          carInfos[id][lane.get('id')] = []
-          
-      agents = data["agents"]
-      for i in range(len(agents)):
-        tPos = agents[i]["transform"]["position"]
-        tRot = agents[i]["transform"]["rotation"]
-        carT = findRoad(tPos, tRot)
-        if carT != None:
-          carInfos[carT[0]][carT[1]].append({"carId": i, "ordId": 0, "pos": carT[2], "dis": carT[3]})
-        else:
-          print("Not found: ", i, " ", 0)
-
-        if agents[i]["uid"] != "":
-          dPos = agents[i]["destinationPoint"]["position"]
-          dRot = agents[i]["destinationPoint"]["rotation"]
-          carD = findRoad(dPos, dRot)
-          egoTs.append(carT)
-          egoDs.append(carD)
-          if carD != None:
-            carInfos[carD[0]][carD[1]].append({"carId": i, "ordId": 1, "pos": carD[2], "dis": carD[3]})
-          else:
-            print("Not found: ", i, " ", 1)
-          
-        else:
-          wayPoints = agents[i]["waypoints"]
-          for j in range(len(wayPoints)):
-            pos = wayPoints[j]["position"]
-            rot = wayPoints[j]["angle"]
-            point = findRoad(pos, rot)
-            if point != None:
-              carInfos[point[0]][point[1]].append({"carId": i, "ordId": j+1, "pos": point[2], "dis": point[3]})
-            else:
-              print("Not found: ", i, " ", j+1)
-        print("Done: ", i)
+      addData(json.load(file))
+      updateCarData()
       return True
   
   except FileNotFoundError:
@@ -70,15 +58,60 @@ def readJson(name):
     print("Error: Invalid JSON format!")
     return False
 
+def updateCarData():
+  carInfos = defaultdict(dict)
+  for id, road in odr.roads.items():
+    carInfos[id] = defaultdict(dict)
+    lanes = road.find("lanes").findall(".//lane")
+    for lane in lanes:
+      carInfos[id][lane.get('id')] = []
+      
+  agents = data[-1]["agents"]
+  for i in range(len(agents)):
+    tPos = agents[i]["transform"]["position"]
+    tRot = agents[i]["transform"]["rotation"]
+    carT = findRoad(tPos, tRot)
+
+    if agents[i]["uid"] != "":
+      dPos = agents[i]["destinationPoint"]["position"]
+      dRot = agents[i]["destinationPoint"]["rotation"]
+      carD = findRoad(dPos, dRot)
+      if carT != None and carD != None:
+        egoTs.append([carT[0], carT[1], len(carInfos[carT[0]][carT[1]])])
+        egoDs.append([carD[0], carD[1], len(carInfos[carD[0]][carD[1]])])
+        carInfos[carT[0]][carT[1]].append({"carId": i, "ordId": 0, "pos": carT[2], "dis": carT[3]})
+        carInfos[carD[0]][carD[1]].append({"carId": i, "ordId": 1, "pos": carD[2], "dis": carD[3]})
+      else:
+        print("Ego not found: ", i)
+
+    else:
+      if carT != None:
+        carInfos[carT[0]][carT[1]].append({"carId": i, "ordId": 0, "pos": carT[2], "dis": carT[3]})
+      else:
+        print("Not found: ", i, " ", 0) 
+      wayPoints = agents[i]["waypoints"]
+      for j in range(len(wayPoints)):
+        pos = wayPoints[j]["position"]
+        rot = wayPoints[j]["angle"]
+        point = findRoad(pos, rot)
+        if point != None:
+          carInfos[point[0]][point[1]].append({"carId": i, "ordId": j+1, "pos": point[2], "dis": point[3]})
+        else:
+          print("Not found: ", i, " ", j+1)
+    print("Done: ", i)
+
+  print("Done")
+  addCarData(carInfos)
+
 def writeJson():
   with open(path.PATH+path.saveName+"_test.json", 'w') as file:
-    json.dump(data, file, indent=4)
+    json.dump(data[-1], file, indent=4)
     file.write('\n')
 
 def getOrd(carInfo):
   carId = carInfo["carId"]
   ordId = carInfo["ordId"]
-  car = data["agents"][carId]
+  car = data[-1]["agents"][carId]
   if car['uid'] != "":
     if ordId == 0:
       return car['transform']

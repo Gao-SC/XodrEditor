@@ -6,14 +6,14 @@ from constants import *
 from scipy.optimize import root_scalar
 
 data = deque()
-def updateTrees(new_val):
+def addData(new_val):
   data.append(copy.deepcopy(new_val))
   if len(data) > 256:
     data.popleft()
 def redoData():
   if len(data) > 1:
     data.pop()
-def clearTrees():
+def clearData():
   data.clear()
 
 root = None
@@ -41,8 +41,8 @@ def openXodr(name):
   except Exception:
     print("File not found!")
     return False
-  clearTrees()
-  updateTrees(tree)
+  clearData()
+  addData(tree)
   updateRoot(data[-1].getroot())
   updateData()
   return True
@@ -78,9 +78,9 @@ def updateData():
     connections = junction.findall('connection')
     junctionUpdate(id, connections, tmpJSets)
 
-def pushNewTree():
+def pushNewData():
   roads.clear()
-  updateTrees(data[-1])
+  addData(data[-1])
   updateRoot(data[-1].getroot())
   for road in root.iter('road'):
     id = road.get('id')

@@ -40,7 +40,7 @@ if __name__ == '__main__':
                     break
                 case "undo":
                     odr.redoData()
-                    ## det.redoData()
+                    det.redoData()
                 case "saveName":
                     path.saveName = command[1]
                 case "test":
@@ -53,7 +53,8 @@ if __name__ == '__main__':
                     test = True
 
                 case "width":
-                    odr.pushNewTree()
+                    odr.pushNewData()
+                    det.pushNewData()
                     id = None
                     v = None
                     s = 0
@@ -80,7 +81,8 @@ if __name__ == '__main__':
                     editRoadWidth(id=id, value=v, smooth=s, maxStep=ms, sameHdg=sh, laneIds=li)
 
                 case "slope":
-                    odr.pushNewTree()
+                    odr.pushNewData()
+                    det.pushNewData()
                     id = None
                     v = None
                     m = 'add'
@@ -104,7 +106,8 @@ if __name__ == '__main__':
                     editRoadSlope(id=id, value=v, mode=m, move=mv, maxStep=ms, sameHdg=sh)
 
                 case "fit":
-                    odr.pushNewTree()
+                    odr.pushNewData()
+                    det.pushNewData()
                     id = None
                     md = 0.01
                     st = 1.0
@@ -122,7 +125,8 @@ if __name__ == '__main__':
                     initRoadArc(id=id, md=md, st=st)
 
                 case "curve":
-                    odr.pushNewTree()
+                    odr.pushNewData()
+                    det.pushNewData()
                     id = None
                     x0, y0, h0, v0 = 0, 0, 0, 0
                     x1, y1, h1, v1 = 0, 0, 0, 0
