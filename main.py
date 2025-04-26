@@ -155,8 +155,9 @@ if __name__ == '__main__':
                     if id == None:
                         print("Illegal command! Required parameter missing.")
                         continue
-                    id, lenGs = initRoadArc(id=id, md=0.01, st=1.0)
+                    
                     if gi == "random":
+                        id, lenGs = initRoadArc(id=id, md=0.01, st=1.0)
                         gi = random.randrange(0, lenGs)
                     editRoadArc(id=id, x0=x0, y0=y0, h0=h0, v0=v0, x1=x1, y1=y1, h1=h1, v1=v1, gi=gi)
 
