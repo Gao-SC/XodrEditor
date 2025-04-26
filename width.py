@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
 import odrparser as odr
 import detector as det
+import test
 from constants import *
 from collections import deque
 import copy
@@ -14,27 +15,12 @@ def setWidth(width: ET.Element, value, mode, length=0):
     case 'add':
       setData(width, 'a', value+getData(width, 'a'))
       return [value, 0, 0, 0]
-    case 'stail1':
-      x = length
-      newC = c-3*value/x**2
-      newD = d+2*value/x**3
-      setData(width, 'a', a+value)
-      setData(width, 'c', newC)
-      setData(width, 'd', newD)
-      return [value, 0, -3*value/x**2, 2*value/x**3]
-    case 'shead1':
-      x = length
-      newC = c+3*value/x**2
-      newD = d-2*value/x**3
-      setData(width, 'c', newC)
-      setData(width, 'd', newD)
-      return [0, 0, 3*value/x**2, -2*value/x**3]
-    case 'stail2':
+    case 'stail':
       x = length-getData(width, 'sOffset')
       setData(width, 'a', a+value/length*x)
       setData(width, 'b', b-value/length)
       return [value/length*x, -value/length, 0, 0]
-    case 'shead2':
+    case 'shead':
       x = getData(width, 'sOffset')
       setData(width, 'a', a+value/length*x)
       setData(width, 'b', b+value/length)
@@ -46,6 +32,12 @@ def setWidth(width: ET.Element, value, mode, length=0):
 ## 默认仅有一个LaneSection
 ## TODO 因一些原因暂时删除了按比例拓宽
 def editRoadWidth(id, value, smooth=0, maxStep=0, sameHdg=0, laneIds=[]):
+  if id == "random":
+    test.setCandidates()
+    id, laneId = random.choice(test.candidateLanes)
+    laneIds = [laneId]
+    print(id, laneId)
+
   odr.laneEdits = copy.deepcopy(odr.laneBackup)
   # TODO if mode == 'mul':
   if laneIds == []:
@@ -64,13 +56,13 @@ def editRoadWidth(id, value, smooth=0, maxStep=0, sameHdg=0, laneIds=[]):
   for rid, rEdit in odr.laneEdits.items():
     for lid, info in rEdit.items():
       if info == cons.TAIL_EDITED and smooth:
-        setLaneWidth(rid, lid, value, 'addt', smooth)
+        setLaneWidth(rid, lid, value, 'addt')
       elif info == cons.HEAD_EDITED and smooth:
-        setLaneWidth(rid, lid, value, 'addh', smooth)
+        setLaneWidth(rid, lid, value, 'addh')
       elif info == cons.BOTH_EDITED:
-        setLaneWidth(rid, lid, value, 'add' , smooth)
+        setLaneWidth(rid, lid, value, 'add')
 
-def setLaneWidth(id, lid, value, mode, smooth):
+def setLaneWidth(id, lid, value, mode):
   road = odr.roads[id]
   length = getData(road, 'length')
   section = road.find('lanes').find('laneSection')
@@ -80,39 +72,21 @@ def setLaneWidth(id, lid, value, mode, smooth):
       continue
     widths = lane.findall('width')
     widthNum = len(widths)
-
-    dis = 0
-    if smooth == 1 and mode == 'addt':
-      for j in range(widthNum):
-        if getData(widths[j], 'sOffset') >= value*2:
-          dis = getData(widths[j], 'sOffset')
-          break
-    if smooth == 1 and mode == 'addh':
-      for j in range(widthNum-1, 0, -1):
-        if length-getData(widths[j], 'sOffset') >= value*2:
-          dis = getData(widths[j], 'sOffset')
-          break
       
     for j in range(widthNum):
       delta = [0, 0, 0, 0]
-      match (mode, smooth):
-        case ('add', x):
+      match mode:
+        case 'add':
           delta = setWidth(widths[j], value, 'add')
-        case ('addt', 1):
-          if getData(widths[j], 'sOffset') < dis:
-            delta = setWidth(widths[j], value, 'stail1', dis)
-        case ('addh', 1):
-          if getData(widths[j], 'sOffset') >= dis:
-            delta = setWidth(widths[j], value, 'shead1', length-dis)
-        case ('addt', 2):
-          delta = setWidth(widths[j], value, 'stail2', length)
-        case ('addh', 2):
-          delta = setWidth(widths[j], value, 'shead2', length)
+        case 'addt':
+          delta = setWidth(widths[j], value, 'stail', length)
+        case 'addh':
+          delta = setWidth(widths[j], value, 'shead', length)
       
       s0 = getData(widths[j], "sOffset")
       s1 = getData(road, "length") if j == widthNum-1 else getData(widths[j+1], "sOffset")
 
-      for laneId, infos in det.carInfos[id].items():
+      for laneId, infos in det.carData[-1][id].items():
         if int(laneId) < 0 < int(lid) or int(laneId) > 0 > int(lid):
           continue
         if int(lid) > int(laneId) > 0 or int(lid) < int(laneId) < 0:

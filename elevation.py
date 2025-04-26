@@ -1,6 +1,7 @@
 import copy
 import odrparser as odr
 import detector as det
+import test
 from collections import deque
 from constants import *
 
@@ -8,6 +9,12 @@ def editRoadSlope(id, value, mode, move, maxStep=0, sameHdg=0):
   if mode == 'mul' and move == cons.MOVE_BOTH:
     print('Params error!')
     return
+  
+  if id == "random":
+    test.setCandidates()
+    id, laneId = random.choice(test.candidateLanes)
+    laneIds = [laneId]
+    print(id, laneId)
 
   odr.roadEdits = copy.deepcopy(odr.roadBackup)
   odr.roadEdits[id] = cons.BOTH_LOCKED
@@ -67,7 +74,7 @@ def setRoadSlope(id, value, move):
     elif move == cons.MOVE_HEAD:
       setData(e, 'a', getData(e, 'a')+slope*s0)
 
-    for infos in det.carInfos[id].values():
+    for infos in det.carData[-1][id].values():
       for carInfo in infos:
         pos = carInfo["pos"]
         if pos >= s0 and pos < s1:

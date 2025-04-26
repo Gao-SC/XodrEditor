@@ -7,6 +7,8 @@ from elevation import *
 from curvature import *
 from test import *
 
+import random
+
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     plt.ion()
@@ -43,14 +45,6 @@ if __name__ == '__main__':
                     det.redoData()
                 case "saveName":
                     path.saveName = command[1]
-                case "test":
-                    command = testModify()
-                    if command[0] == "curve":
-                        param = command[1].split('=')
-                        gsize = initRoadArc(id=param[1], md=0.01, st=1.0)
-                        gi = random.randint(0, gsize-1)
-                        command.append(f"gi={gi}")
-                    test = True
 
                 case "width":
                     odr.pushNewData()
@@ -65,7 +59,13 @@ if __name__ == '__main__':
                         param = command[i].split('=')
                         match param[0]:
                             case 'id': id = param[1]
-                            case 'v': v = float(param[1])
+                            case 'v':
+                                ranV = param[1].split('_')
+                                if ranV[0] == 'random':
+                                    v = random.uniform(float(ranV[1]), float(ranV[2]))
+                                else:
+                                    v = float(param[1])
+                                
                             case 's': s = int(param[1])
                             case 'ms': ms = int(param[1])
                             case 'sh': sh = int(param[1])
@@ -93,7 +93,13 @@ if __name__ == '__main__':
                         param = command[i].split('=')
                         match param[0]:
                             case 'id': id = param[1]
-                            case 'v': v = float(param[1])
+                            case 'v':
+                                ranV = param[1].split('_')
+                                if ranV[0] == 'random':
+                                    v = random.uniform(float(ranV[1]), float(ranV[2]))
+                                else:
+                                    v = float(param[1])
+
                             case 'm': m = param[1]
                             case 'mv': mv = int(param[1])
                             case 'ms': ms = int(param[1])
@@ -149,6 +155,9 @@ if __name__ == '__main__':
                     if id == None:
                         print("Illegal command! Required parameter missing.")
                         continue
+                    id, lenGs = initRoadArc(id=id, md=0.01, st=1.0)
+                    if gi == "random":
+                        gi = random.randrange(0, lenGs)
                     editRoadArc(id=id, x0=x0, y0=y0, h0=h0, v0=v0, x1=x1, y1=y1, h1=h1, v1=v1, gi=gi)
 
                     

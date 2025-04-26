@@ -1,12 +1,14 @@
 import heapq
-import random
 from collections import defaultdict
 
 import odrparser as odr
 import detector as det
 from constants import *
 
-def testModify():
+candidateRoads = []
+candidateLanes = []
+
+def setCandidates():
   graph = buildGRAPH()
   rectifyGraph(graph)
 
@@ -14,12 +16,10 @@ def testModify():
   paths = []
   for i in range(len(det.egoTs)):
     x = dijkstra(graph, f"start_{i}", f"end_{i}")
-    print(x)
     paths.extend(x)
 
-  candidateRoads = []
-  candidateLanes = []
-  print(paths)
+  candidateRoads.clear()
+  candidateLanes.clear()
   
   for cost, path in paths:
     for node in path:
@@ -38,32 +38,30 @@ def testModify():
       if [id, lid] not in candidateLanes:
         candidateLanes.append([id, lid])
 
-  # method = random.randint(0, 2)
-  method = 0
+  """method = random.randint(0, 2)
   command = ""
-  list1 = [-1, 1]
   match method:
     case 0: # width
       target = random.randint(0, len(candidateLanes)-1)
       id = candidateLanes[target][0]
       li = candidateLanes[target][1]
-      v = (1+1*random.random())*random.choice(list1)    
+      v = (1+1*random.random())*random.choice([-1, 1])    
       command = f"width id={id} li={li} v={v} s=1 sh=1 ms={1<<30}".split()
     case 1: # slope
       target = random.randint(0, len(candidateRoads)-1)
       id = candidateRoads[target]
-      v = (1+1*random.random())*random.choice(list1)
+      v = (1+1*random.random())*random.choice([-1, 1])
       mv = random.randint(0, 2)
       command = f"slope id={id} v={v} mv={mv} sh=1 ms={1<<30}".split()
     case 2: # curve
       target = random.randint(0, len(candidateRoads)-1)
       id = candidateRoads[target]
-      v0 = (0.2+0.2*random.random())*random.choice(list1)
-      v1 = (0.2+0.2*random.random())*random.choice(list1)
+      v0 = (0.2+0.2*random.random())*random.choice([-1, 1])
+      v1 = (0.2+0.2*random.random())*random.choice([-1, 1])
       command = f"curve id={id} v0={v0} v1={v1}".split()
   
   print(command)
-  return command
+  return command"""
 
 def buildGRAPH():
   graph = defaultdict(dict)

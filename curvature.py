@@ -3,9 +3,15 @@ from scipy.optimize import least_squares
 from scipy.optimize import root_scalar
 import odrparser as odr
 import detector as det
+import test
 from constants import *
 
 def initRoadArc(id, md, st):
+  if id == "random":
+    test.setCandidates()
+    id = random.choice(test.candidateRoads)
+    print(id)
+
   road = odr.roads[id]
   planView = road.find('planView')
   gs = planView.findall('geometry')
@@ -45,7 +51,7 @@ def initRoadArc(id, md, st):
 
   showCurve(params)
   rectifyRoadData(road, length)
-  return len(beziers)
+  return id, len(beziers)
 
 ## 拟合圆弧时，v0=v1=cos(theta/2)/(3*cos^2(theta/4))
 def editRoadArc(id, x0, y0, v0, h0, x1, y1, v1, h1, gi):
@@ -284,7 +290,7 @@ def rectifyRoadData(road, length_new):
     setData(width, 'd', getData(width, 'd')/(k_l**3))
 
   gs = road.find('planView').findall('geometry')
-  for infos in det.carInfos[id].values():
+  for infos in det.carData[-1][id].values():
     for carInfo in infos:
       carInfo["pos"] *= k_l
       for i in range(len(gs)):
