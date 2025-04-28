@@ -12,9 +12,8 @@ def editRoadSlope(id, value, mode, move, maxStep=0, sameHdg=0):
   
   if id == "random":
     test.setCandidates()
-    id, laneId = random.choice(test.candidateLanes)
-    laneIds = [laneId]
-    print(id, laneId)
+    id = random.choice(test.candidateRoads)
+    print(id)
 
   odr.roadEdits = copy.deepcopy(odr.roadBackup)
   odr.roadEdits[id] = cons.BOTH_LOCKED
@@ -89,8 +88,8 @@ def setRoadSlope(id, value, move):
           if ord.get("angle") != None:
             ord["angle"]["x"] += math.atan(slope)
           else:
-            ord["rotation"]["x"] += math.atan(slope)
-  
+            ord["rotation"]["x"] += math.atan(slope)*180/math.pi
+
 def lockChange(direction, id):
   for info in odr.roadConnections[id][direction]:
     if info[1]:

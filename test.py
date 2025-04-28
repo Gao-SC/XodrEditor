@@ -166,7 +166,7 @@ def dijkstra(graph, start, end, k=3):
         new_path.append(neighbor)
         heapq.heappush(heap, (cost+weight, new_path))
   
-  print(paths)
+  # print(paths)
   if paths == []:
     return [(0, [start, end])]
   

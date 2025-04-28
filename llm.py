@@ -11,7 +11,7 @@ from time import mktime
 from urllib.parse import urlencode
 from wsgiref.handlers import format_date_time
 
-import websocket  # 使用websocket_client
+import websocket
 answer = ""
 isFirstcontent = False
 
@@ -23,8 +23,78 @@ API_KEY    = "1f3289b06334a5eb83ffce8c319a9f9f"
 DOMAIN     = "x1"
 SPARK_URL  = "wss://spark-api.xf-yun.com/v1/x1"
 
+PROMPT = \
+"你将辅助用户完成对道路数据的编辑任务, 你需要将自然语言翻译为命令序列. \
+生成的命令中, 每个命令独占一行, 非必须输入的参数可以省略, 必须输入的参数标注为*. \
+部分参数可指定为random_x_y, 表示取xy之间的随机值, 它们标注为+. \
+id默认为random, 表示随机取测试范围内的道路. \
+所有默认值均可省略. \
+命令的格式必须严格遵循规范, 不得添加无关部分. \
+可用命令如下: \
+1.  width 命令，用于修改指定道路的指定车道的宽度. \
+    参数列表: \
+    1. id*: 修改的道路id号. \
+    2. v*+: 修改值, 默认为0. \
+    3. s: 是否平滑与其它道路连接边缘, 默认为1. \
+    4. ms: 广度优先搜索层数, 默认为0. \
+    5. sh: 仅在同向道路上搜索, 默认为0.  \
+    6. li: 车道信息, 默认为空, 即修改道路的所有车道。示例: li=-1,1,2 \
+    注: 同时修改多条车道时, 增加/减少的宽度为道路的总宽度，而非单个车道的宽度. \
+2.  slope 命令 \
+    slope命令用于修改指定道路的坡度. \
+    参数列表: \
+    1. id*: 修改的道路id号. \
+    2. v*+: 修改值, 默认为0. \
+    3. mv*: 改变道路指定端高度. 0表示首尾同时改变, 1表示尾部, 2表示头部. \
+    4. m: 修改模式, 分为add高度和mul坡度, 默认为add. \
+    4. ms: 广度优先搜索层数, 默认为0. \
+    5. sh: 仅在同向道路上搜索, 默认为0. \
+3. fit 命令 \
+    fit命令用于拟合道路曲线, 将整条道路拟合为数段曲线. \
+    参数列表: \
+    1. id*: 修改的道路id号. \
+    2. md+: 可以容忍的最大误差, 默认为0.01. \
+    3. st+: 采样途径点的间隔, 默认为1.0. \
+4. curve 命令 \
+    curve命令用于修改指定道路的形状. \
+    参数列表: \
+    1. id*; 修改的道路id号. \
+    2. x0+: 曲线起点x坐标的变化值, 默认为0. \
+    3. y0+: 曲线起点y坐标的变化值, 默认为0. \
+    4. h0+: 曲线起点方向的变化值, 默认为0. \
+    5. v0+: 曲线第一控制点到起点的距离变化值, 默认为0. \
+    6. x1+: 曲线终点x坐标的变化值, 默认为0. \
+    7. y1+: 曲线终点y坐标的变化值, 默认为0. \
+    8. h1+: 曲线终点方向的变化值, 默认为0. \
+    9. v1+: 参数第二控制点到终点的距离变化值, 默认为0. \
+    10. gi: 修改的geomotry编号, 默认为random. \
+5. save 命令. \
+   存储修改后的xodr与json文件. \
+6. close 命令. \
+   关闭文件. \
+7. undo 命令. \
+   撤销上一条编辑指令的编辑效果. \
+8. saveName 命令. \
+   设置存储的文件名. \
+命令序列必须以一个文件名起始, 表示读取它, 并有对应的close. \
+命令序列示例如下: \
+    ARG_Carcarana-1_1_I-1-1 \
+    savename test0 \
+    curve id=random v0=random_-0.5_0.5 v1=random_-0.5_0.5 \
+    save \
+    undo \
+    savename test1 \
+    curve id=random v0=random_-0.5_0.5 v1=random_-0.5_0.5 \
+    save \
+    undo \
+    savename test2 \
+    curve id=random v0=random_-0.5_0.5 v1=random_-0.5_0.5 \
+    save \
+    close \
+它表示将ARG_Carcarana-1_1_I-1-1随机编辑为test0, test1, test2三个新地图. \
+如果明白了，请回复“是的”, 并从下一次对话时开始工作. 如果工作时无法给出答案, 请报错. "
+
 class Ws_Param(object):
-    # 初始化
     def __init__(self, APPID, APIKey, APISecret, Spark_url):
         self.APPID = APPID
         self.APIKey = APIKey
@@ -33,57 +103,41 @@ class Ws_Param(object):
         self.path = urlparse(Spark_url).path
         self.Spark_url = Spark_url
 
-    # 生成url
     def create_url(self):
-        # 生成RFC1123格式的时间戳
         now = datetime.now()
         date = format_date_time(mktime(now.timetuple()))
 
-        # 拼接字符串
         signature_origin = "host: " + self.host + "\n"
         signature_origin += "date: " + date + "\n"
         signature_origin += "GET " + self.path + " HTTP/1.1"
 
-        # 进行hmac-sha256进行加密
         signature_sha = hmac.new(self.APISecret.encode('utf-8'), signature_origin.encode('utf-8'), digestmod=hashlib.sha256).digest()
-
         signature_sha_base64 = base64.b64encode(signature_sha).decode(encoding='utf-8')
-
         authorization_origin = f'api_key="{self.APIKey}", algorithm="hmac-sha256", headers="host date request-line", signature="{signature_sha_base64}"'
-
         authorization = base64.b64encode(authorization_origin.encode('utf-8')).decode(encoding='utf-8')
 
-        # 将请求的鉴权参数组合为字典
         v = {
             "authorization": authorization,
             "date": date,
             "host": self.host
         }
-        # 拼接鉴权参数，生成url
         url = self.Spark_url + '?' + urlencode(v)
-        # 此处打印出建立连接时候的url,参考本demo的时候可取消上方打印的注释，比对相同参数时生成的url与自己代码生成的url是否一致
         return url
 
 
-# 收到websocket错误的处理
-def on_error(ws, error):
-    print("### error:", error)
+def onError(ws, error):
+    print("error: ", error)
 
-# 收到websocket关闭的处理
-def on_close(ws,one,two):
+def onClose(ws, one, two):
     print(" ")
 
-# 收到websocket连接建立的处理
-def on_open(ws):
+def onOpen(ws):
     thread.start_new_thread(run, (ws,))
-
 def run(ws, *args):
-    data = json.dumps(gen_params(appid=ws.appid, domain= ws.domain,question=ws.question))
+    data = json.dumps(genParams(appid=ws.appid, domain= ws.domain,question=ws.question))
     ws.send(data)
-
-# 收到websocket消息的处理
-def on_message(ws, message):
-    # print(message)
+def onMessage(ws, message):
+    print("message: ", message)
     data = json.loads(message)
     code = data['header']['code']
     content =''
@@ -112,7 +166,7 @@ def on_message(ws, message):
         if status == 2:
             ws.close()
 
-def gen_params(appid, domain, question):
+def genParams(appid, domain, question):
     data = {
         "header": {
             "app_id": appid,
@@ -122,7 +176,7 @@ def gen_params(appid, domain, question):
             "chat": {
                 "domain": domain,
                 "temperature": 1.2,
-                "max_tokens": 32768       # 请根据不同模型支持范围，适当调整该值的大小
+                "max_tokens": 10000       # 请根据不同模型支持范围，适当调整该值的大小
             }
         },
         "payload": {
@@ -134,21 +188,19 @@ def gen_params(appid, domain, question):
     return data
 
 
-def main(appid, api_key, api_secret, Spark_url,domain, question):
+def main(appid, apiKey, apiSecret, sparkUrl, domain, question):
     print("星火:")
-    wsParam = Ws_Param(appid, api_key, api_secret, Spark_url)
+    wsParam = Ws_Param(appid, apiKey, apiSecret, sparkUrl)
     websocket.enableTrace(False)
     wsUrl = wsParam.create_url()
-    ws = websocket.WebSocketApp(wsUrl, on_message=on_message, on_error=on_error, on_close=on_close, on_open=on_open)
+    ws = websocket.WebSocketApp(wsUrl, on_message=onMessage, on_error=onError, on_close=onClose, on_open=onOpen)
     ws.appid = appid
     ws.question = question
     ws.domain = domain
     ws.run_forever(sslopt={"cert_reqs": ssl.CERT_NONE})
 
-
 text = []
 
-# 管理对话历史，按序编为列表
 def getText(role, content):
     jsoncon = {}
     jsoncon["role"] = role
@@ -156,7 +208,6 @@ def getText(role, content):
     text.append(jsoncon)
     return text
 
-# 获取对话中的所有角色的content长度
 def getlength(text):
     length = 0
     for content in text:
@@ -165,17 +216,14 @@ def getlength(text):
         length += leng
     return length
 
-# 判断长度是否超长，当前限制8K tokens
 def checklen(text):
     while (getlength(text) > 8000):
         del text[0]
     return text
 
-
 if __name__ == '__main__':
     while (1):
         Input = input("\n" + "我:")
         question = checklen(getText("user", Input))
-        print("星火:", end="")
         main(APPID, API_KEY, API_SECRET, SPARK_URL, DOMAIN, question)
         getText("assistant", answer)

@@ -55,6 +55,11 @@ def initRoadArc(id, md, st):
 
 ## 拟合圆弧时，v0=v1=cos(theta/2)/(3*cos^2(theta/4))
 def editRoadArc(id, x0, y0, v0, h0, x1, y1, v1, h1, gi):
+  if id == "random":
+    test.setCandidates()
+    id = random.choice(test.candidateRoads)
+    print(id)
+
   road = odr.roads[id]
   planView = road.find('planView')
   gs = planView.findall('geometry')
@@ -64,7 +69,7 @@ def editRoadArc(id, x0, y0, v0, h0, x1, y1, v1, h1, gi):
   
   params = []
   ## 计算道路方程
-  length_new = 0
+  lengthNew = 0
   edit0 = x0 != 0 or y0 != 0 or h0 != 0
   edit1 = x1 != 0 or y1 != 0 or h1 != 0
   B = getGBezier(gs[gi])
@@ -102,7 +107,7 @@ def editRoadArc(id, x0, y0, v0, h0, x1, y1, v1, h1, gi):
     
     if judge:
       gs[i].clear()
-      setData(gs[i], 's', length_new)
+      setData(gs[i], 's', lengthNew)
       setData(gs[i], 'x', x)
       setData(gs[i], 'y', y)
       setData(gs[i], 'hdg', 0)
@@ -118,11 +123,11 @@ def editRoadArc(id, x0, y0, v0, h0, x1, y1, v1, h1, gi):
       setData(poly, 'dV', param[5])
       gs[i].append(poly)
     elif i >= gi+1:
-      setData(gs[i], 's', length_new)
-    length_new += l
+      setData(gs[i], 's', lengthNew)
+    lengthNew += l
 
   showCurve(params)
-  rectifyRoadData(road, length_new)
+  rectifyRoadData(road, lengthNew)
 
 ## PRIVATE METHODS
 
@@ -309,11 +314,22 @@ def rectifyRoadData(road, length_new):
           x += u*math.cos(hdg)-v*math.sin(hdg)
           y += u*math.sin(hdg)+v*math.cos(hdg)
           hdg += math.atan2(bV+2*cV*t+3*dV*t**2, bU+2*cU*t+3*dU*t**2)
+
           x += carInfo["dis"]*math.sin(hdg)
           y -= carInfo["dis"]*math.cos(hdg)
           ord = det.getOrd(carInfo)
           ord["position"]['x'] = x
           ord["position"]['z'] = y
+          if ord.get("angle") != None:
+            if carInfo["dis"] > 0:
+              ord["angle"]["y"] =  hdg*180/math.pi
+            else:
+              ord["angle"]["y"] = -hdg*180/math.pi
+          else:
+            if carInfo["dis"] > 0:
+              ord["rotation"]["y"] =  hdg*180/math.pi
+            else:
+              ord["rotation"]["y"] = -hdg*180/math.pi
           break
 
 def bezierToParam(param):

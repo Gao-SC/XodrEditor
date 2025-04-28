@@ -44,3 +44,12 @@ def showCurve(params):
     plt.plot(u, v, color=colors[i])
     plt.axis('equal')
   plt.show()
+
+def getRandomValue(string):
+  valueList = string.split('_')
+  if valueList[0] == 'random':
+    v = random.uniform(float(valueList[1]), float(valueList[2]))
+    print('v=', v)
+  else:
+    v = float(valueList[0])
+  return v
