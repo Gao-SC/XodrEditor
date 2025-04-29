@@ -2,10 +2,10 @@ import xml.etree.ElementTree as ET
 from scipy.optimize import least_squares, root_scalar
 from scipy.integrate import quad
 
-import odrparser as odr
-import detector as det
+import src.xodr.xodrParser as Xparser
+import src.json.jsonParser as JParser
 import test
-from constants import *
+from src.utils.constants import *
 
 def initRoadArc(id, md, st):
   if id == "random":
@@ -13,7 +13,7 @@ def initRoadArc(id, md, st):
     id = random.choice(test.candidateRoads)
     print(id)
 
-  road = odr.roads[id]
+  road = Xparser.roads[id]
   planView = road.find('planView')
   gs = planView.findall('geometry')
   beziers = solveInitialCurve(gs, md, st)
@@ -24,7 +24,7 @@ def initRoadArc(id, md, st):
   params = []
   for bezier in beziers:
     param = bezierToParam(bezier)
-    l = odr.getLength(param, 1)
+    l = Xparser.getLength(param, 1)
     param.append(x-getData(gs[0], 'x'))
     param.append(y-getData(gs[0], 'y'))
     params.append(param)
@@ -61,7 +61,7 @@ def editRoadArc(id, x0, y0, v0, h0, x1, y1, v1, h1, gi):
     id = random.choice(test.candidateRoads)
     print(id)
 
-  road = odr.roads[id]
+  road = Xparser.roads[id]
   planView = road.find('planView')
   gs = planView.findall('geometry')
   if gi >= len(gs):
@@ -101,7 +101,7 @@ def editRoadArc(id, x0, y0, v0, h0, x1, y1, v1, h1, gi):
     x = getData(gs[i], 'x')+deltaX
     y = getData(gs[i], 'y')+deltaY
     param = bezierToParam(bezier)
-    l = odr.getLength(param, 1)
+    l = Xparser.getLength(param, 1)
     param.append(x-getData(gs[0], 'x'))
     param.append(y-getData(gs[0], 'y'))
     params.append(param)
@@ -296,7 +296,7 @@ def rectifyRoadData(road, length_new):
     setData(width, 'd', getData(width, 'd')/(k_l**3))
 
   gs = road.find('planView').findall('geometry')
-  for infos in det.carData[-1][id].values():
+  for infos in JParser.carData[-1][id].values():
     for carInfo in infos:
       carInfo["pos"] *= k_l
       for i in range(len(gs)):
@@ -318,7 +318,7 @@ def rectifyRoadData(road, length_new):
 
           x += carInfo["dis"]*math.sin(hdg)
           y -= carInfo["dis"]*math.cos(hdg)
-          ord = det.getOrd(carInfo)
+          ord = JParser.getOrd(carInfo)
           ord["position"]['x'] = x
           ord["position"]['z'] = y
           if ord.get("angle") != None:

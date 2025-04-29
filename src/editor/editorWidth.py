@@ -1,8 +1,8 @@
 import xml.etree.ElementTree as ET
-import odrparser as odr
-import detector as det
+import src.xodr.xodrParser as Xparser
+import src.json.jsonParser as JParser
 import test
-from constants import *
+from src.utils.constants import *
 from collections import deque
 import copy
 
@@ -38,22 +38,22 @@ def editRoadWidth(id, value, smooth=0, maxStep=0, sameHdg=0, laneIds=[]):
     laneIds = [laneId]
     print(id, laneId)
 
-  odr.laneEdits = copy.deepcopy(odr.laneBackup)
+  Xparser.laneEdits = copy.deepcopy(Xparser.laneBackup)
   # TODO if mode == 'mul':
   if laneIds == []:
-    for lid in odr.laneEdits[id].keys():
-      odr.laneEdits[id][lid] = cons.BOTH_EDITED
-      setChange(id, lid, cons.TAIL, maxStep, sameHdg, odr.hdgs[id][0])
-      setChange(id, lid, cons.HEAD, maxStep, sameHdg, odr.hdgs[id][1])
-    value = value/len(odr.laneEdits[id].values())
+    for lid in Xparser.laneEdits[id].keys():
+      Xparser.laneEdits[id][lid] = cons.BOTH_EDITED
+      setChange(id, lid, cons.TAIL, maxStep, sameHdg, Xparser.hdgs[id][0])
+      setChange(id, lid, cons.HEAD, maxStep, sameHdg, Xparser.hdgs[id][1])
+    value = value/len(Xparser.laneEdits[id].values())
   else:
     for lid in laneIds:
-      odr.laneEdits[id][lid] = cons.BOTH_EDITED
-      setChange(id, lid, cons.TAIL, maxStep, sameHdg, odr.hdgs[id][0])
-      setChange(id, lid, cons.HEAD, maxStep, sameHdg, odr.hdgs[id][1])
+      Xparser.laneEdits[id][lid] = cons.BOTH_EDITED
+      setChange(id, lid, cons.TAIL, maxStep, sameHdg, Xparser.hdgs[id][0])
+      setChange(id, lid, cons.HEAD, maxStep, sameHdg, Xparser.hdgs[id][1])
     value = value/len(laneIds)
 
-  for rid, rEdit in odr.laneEdits.items():
+  for rid, rEdit in Xparser.laneEdits.items():
     for lid, info in rEdit.items():
       if info == cons.TAIL_EDITED and smooth:
         setLaneWidth(rid, lid, value, 'addt')
@@ -63,7 +63,7 @@ def editRoadWidth(id, value, smooth=0, maxStep=0, sameHdg=0, laneIds=[]):
         setLaneWidth(rid, lid, value, 'add')
 
 def setLaneWidth(id, lid, value, mode):
-  road = odr.roads[id]
+  road = Xparser.roads[id]
   length = getData(road, 'length')
   section = road.find('lanes').find('laneSection')
 
@@ -86,7 +86,7 @@ def setLaneWidth(id, lid, value, mode):
       s0 = getData(widths[j], "sOffset")
       s1 = getData(road, "length") if j == widthNum-1 else getData(widths[j+1], "sOffset")
 
-      for laneId, infos in det.carData[-1][id].items():
+      for laneId, infos in JParser.carData[-1][id].items():
         if int(laneId) < 0 < int(lid) or int(laneId) > 0 > int(lid):
           continue
         if int(lid) > int(laneId) > 0 or int(lid) < int(laneId) < 0:
@@ -94,12 +94,12 @@ def setLaneWidth(id, lid, value, mode):
         for carInfo in infos:
           pos = carInfo["pos"]
           if pos >= s0 and pos < s1:
-            hdg = odr.findHdg(id, pos)
+            hdg = Xparser.findHdg(id, pos)
             ds = pos-s0
             dw = delta[0]+delta[1]*ds+delta[2]*ds**2+delta[3]*ds**3
             dw = dw if laneId != lid else dw/2
             
-            ord = det.getOrd(carInfo)
+            ord = JParser.getOrd(carInfo)
             if int(lid) < 0:
               ord["position"]['x'] += dw*math.sin(hdg)
               ord["position"]['z'] -= dw*math.cos(hdg)
@@ -114,7 +114,7 @@ def setChange(id, lid, di, maxStep, sameHdg, hdg):
   queue = deque()
   step = 0
 
-  for info in odr.laneConnections[id][lid][int(di)]:
+  for info in Xparser.laneConnections[id][lid][int(di)]:
     queue.append({"id": info[0], 'lid': info[1], "di": info[2], "step": 0})
 
   while len(queue) > 0:
@@ -125,8 +125,8 @@ def setChange(id, lid, di, maxStep, sameHdg, hdg):
     step = item['step']
 
     if sameHdg:
-      angle0 = (odr.hdgs[id][0]-hdg)%(2*math.pi)
-      angle1 = (odr.hdgs[id][1]-hdg)%(2*math.pi)
+      angle0 = (Xparser.hdgs[id][0]-hdg)%(2*math.pi)
+      angle1 = (Xparser.hdgs[id][1]-hdg)%(2*math.pi)
       m1, m2, m3, m4 = math.pi/4, math.pi/4*3, math.pi/4*5, math.pi/4*7
       if angle0 > m1 and angle0 < m2 or angle0 > m3 and angle0 < m4:
         step = maxStep
@@ -134,33 +134,33 @@ def setChange(id, lid, di, maxStep, sameHdg, hdg):
         step = maxStep
 
     if step < maxStep:
-      match odr.laneEdits[id][lid]:
+      match Xparser.laneEdits[id][lid]:
         case cons.NOT_EDITED | cons.TAIL_EDITED | cons.HEAD_EDITED:
-          odr.laneEdits[id][lid] = cons.BOTH_EDITED
-          for info in odr.laneConnections[id][lid][0]:
+          Xparser.laneEdits[id][lid] = cons.BOTH_EDITED
+          for info in Xparser.laneConnections[id][lid][0]:
             queue.append({"id": info[0], "lid": info[1], "di": info[2], "step": step+1})
-          for info in odr.laneConnections[id][lid][1]:
+          for info in Xparser.laneConnections[id][lid][1]:
             queue.append({"id": info[0], "lid": info[1], "di": info[2], "step": step+1})
         case _:
           continue
     
     elif step == maxStep and not di:
-      match odr.laneEdits[id][lid]:
+      match Xparser.laneEdits[id][lid]:
         case cons.NOT_EDITED:
-          odr.laneEdits[id][lid] = cons.TAIL_EDITED
+          Xparser.laneEdits[id][lid] = cons.TAIL_EDITED
         case cons.HEAD_EDITED:
-          odr.laneEdits[id][lid] = cons.BOTH_EDITED
+          Xparser.laneEdits[id][lid] = cons.BOTH_EDITED
         case _:
           continue
-      for info in odr.laneConnections[id][lid][int(cons.TAIL)]:
+      for info in Xparser.laneConnections[id][lid][int(cons.TAIL)]:
         queue.append({"id": info[0], "lid": info[1], "di": info[2], "step": step})
     elif step == maxStep and di:
-      match odr.laneEdits[id][lid]:
+      match Xparser.laneEdits[id][lid]:
         case cons.NOT_EDITED:
-          odr.laneEdits[id][lid] = cons.HEAD_EDITED
+          Xparser.laneEdits[id][lid] = cons.HEAD_EDITED
         case cons.TAIL_EDITED:
-          odr.laneEdits[id][lid] = cons.BOTH_EDITED
+          Xparser.laneEdits[id][lid] = cons.BOTH_EDITED
         case _:
           continue
-      for info in odr.laneConnections[id][lid][int(cons.HEAD)]:
+      for info in Xparser.laneConnections[id][lid][int(cons.HEAD)]:
         queue.append({"id": info[0], "lid": info[1], "di": info[2], "step": step})

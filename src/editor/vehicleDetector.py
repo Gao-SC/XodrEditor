@@ -1,9 +1,9 @@
 import heapq
 from collections import defaultdict
 
-import odrparser as odr
-import detector as det
-from constants import *
+import src.xodr.xodrParser as Xparser
+import src.json.jsonParser as JParser
+from src.utils.constants import *
 
 candidateRoads = []
 candidateLanes = []
@@ -14,7 +14,7 @@ def setCandidates():
 
   # 运行Dijkstra
   paths = []
-  for i in range(len(det.egoTs)):
+  for i in range(len(JParser.egoTs)):
     x = dijkstra(graph, f"start_{i}", f"end_{i}")
     paths.extend(x)
 
@@ -26,10 +26,10 @@ def setCandidates():
       id, lid = "", ""
       data = node.split('_')
       if data[0] == "start":
-        egoT = det.egoTs[int(data[1])]
+        egoT = JParser.egoTs[int(data[1])]
         id, lid = egoT[0], egoT[1]
       elif data[0] == "end":
-        egoD = det.egoDs[int(data[1])]
+        egoD = JParser.egoDs[int(data[1])]
         id, lid = egoD[0], egoD[1]
       else:
         id, lid = data[1], data[3]
@@ -65,12 +65,12 @@ def setCandidates():
 
 def buildGRAPH():
   graph = defaultdict(dict)
-  for id, road in odr.roads.items():
+  for id, road in Xparser.roads.items():
     length = getData(road, 'length')
     section = road.find('lanes').find('laneSection')
     
-    lws0, rws0 = det.getLanesWidth(road, 0)
-    lws1, rws1 = det.getLanesWidth(road, length)
+    lws0, rws0 = JParser.getLanesWidth(road, 0)
+    lws1, rws1 = JParser.getLanesWidth(road, length)
 
     for lane in section.findall('.//lane'):
       lid = lane.get('id')
@@ -97,7 +97,7 @@ def buildGRAPH():
           graph[headNode][otherHeadNode] = abs(lws1[ int(lid)]-lws1[ int(otherLid)])
     
       
-  for id, item in odr.laneConnections.items():
+  for id, item in Xparser.laneConnections.items():
     for lid, item_ in item.items():
       if int(lid) < 0: #右侧车道
         node = f"road_{id}_lane_{lid}_1"
@@ -113,12 +113,12 @@ def buildGRAPH():
   return graph
 
 def rectifyGraph(graph):
-  for i in range(len(det.egoTs)):
-    egoT, egoD = det.egoTs[i], det.egoDs[i]
+  for i in range(len(JParser.egoTs)):
+    egoT, egoD = JParser.egoTs[i], JParser.egoDs[i]
     if egoT == None or egoD == None:
       continue
 
-    road0 = odr.roads[egoT[0]]
+    road0 = Xparser.roads[egoT[0]]
     length0 = getData(road0, 'length')
     if int(egoT[1]) < 0: # 道路右侧
       graph[f"start_{i}"][f"road_{egoT[0]}_lane_{egoT[1]}_1"] = length0-egoT[2]
@@ -127,7 +127,7 @@ def rectifyGraph(graph):
       graph[f"start_{i}"][f"road_{egoT[0]}_lane_{egoT[1]}_0"] = egoT[2]
       graph[f"road_{egoT[0]}_lane_{egoT[1]}_1"][f"start_{i}"] = length0-egoT[2]
 
-    road1 = odr.roads[egoD[0]]
+    road1 = Xparser.roads[egoD[0]]
     length1 = getData(road1, 'length')
     if int(egoD[1]) < 0: # 道路右侧
       graph[f"end_{i}"][f"road_{egoD[0]}_lane_{egoD[1]}_1"] = length1-egoD[2]

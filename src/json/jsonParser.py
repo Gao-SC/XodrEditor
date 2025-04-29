@@ -6,9 +6,9 @@ import math
 import json
 import heapq
 
-import path
-import odrparser as odr
-from constants import *
+import src.utils.path as path
+import src.xodr.xodrParser as Xparser
+from src.utils.constants import *
 
 data = deque()
 def addData(new_val):
@@ -60,7 +60,7 @@ def readJson(name):
 
 def updateCarData():
   carInfos = defaultdict(dict)
-  for id, road in odr.roads.items():
+  for id, road in Xparser.roads.items():
     carInfos[id] = defaultdict(dict)
     lanes = road.find("lanes").findall(".//lane")
     for lane in lanes:
@@ -127,7 +127,7 @@ def getOrd(carInfo):
 
 def findRoad(pos, rot):
   candidateRoads = []
-  for id, road in odr.roads.items():
+  for id, road in Xparser.roads.items():
     ans, ansL = projectPoint(road, pos['x'], pos['z'])
     if ans == float('inf'):
       continue
@@ -151,7 +151,7 @@ def findRoad(pos, rot):
 
 def buildGRAPH():
   graph = defaultdict(dict)
-  for id, road in odr.roads.items():
+  for id, road in Xparser.roads.items():
     length = getData(road, 'length')
     section = road.find('lanes').find('laneSection')
     
@@ -183,7 +183,7 @@ def buildGRAPH():
           graph[headNode][otherHeadNode] = abs(lws1[ int(lid)]-lws1[ int(otherLid)])
     
       
-  for id, item in odr.laneConnections.items():
+  for id, item in Xparser.laneConnections.items():
     for lid, item_ in item.items():
       if int(lid) < 0: #右侧车道
         node = f"road_{id}_lane_{lid}_1"
@@ -204,7 +204,7 @@ def rectifyGraph(graph):
     if egoT == None or egoD == None:
       continue
 
-    road0 = odr.roads[egoT[0]]
+    road0 = Xparser.roads[egoT[0]]
     length0 = getData(road0, 'length')
     if int(egoT[1]) < 0: # 道路右侧
       graph[f"start_{i}"][f"road_{egoT[0]}_lane_{egoT[1]}_1"] = length0-egoT[2]
@@ -213,7 +213,7 @@ def rectifyGraph(graph):
       graph[f"start_{i}"][f"road_{egoT[0]}_lane_{egoT[1]}_0"] = egoT[2]
       graph[f"road_{egoT[0]}_lane_{egoT[1]}_1"][f"start_{i}"] = length0-egoT[2]
 
-    road1 = odr.roads[egoD[0]]
+    road1 = Xparser.roads[egoD[0]]
     length1 = getData(road1, 'length')
     if int(egoD[1]) < 0: # 道路右侧
       graph[f"end_{i}"][f"road_{egoD[0]}_lane_{egoD[1]}_1"] = length1-egoD[2]
@@ -356,7 +356,7 @@ def projectPoint(road, tarX, tarY):
           dis = math.hypot(x_t-tarX, y_t-tarY)
           if dx_dt*(tarY-y_t) > dy_dt*(tarX-x_t):
             dis *= -1
-      pos = odr.getLength([bU, cU, dU, bV, cV, dV], T)
+      pos = Xparser.getLength([bU, cU, dU, bV, cV, dV], T)
 
     if abs(ans) > abs(dis):
       ans = dis

@@ -1,11 +1,11 @@
-import odrparser as odr
-import detector as det
-import llm
-import path
-from constants import *
-from width import *
-from elevation import *
-from curvature import *
+import src.xodr.xodrParser as Xparser
+import src.json.jsonParser as JParser
+import src.llm.llm as llm
+import src.utils.path as path
+from src.utils.constants import *
+from src.editor.editorWidth import *
+from src.editor.editorSlope import *
+from src.editor.editorCurve import *
 from test import *
 
 if __name__ == '__main__':
@@ -25,9 +25,9 @@ if __name__ == '__main__':
             commandList = llm.translate()
             continue
 
-        if odr.openXodr(fileName) == False:
+        if Xparser.openXodr(fileName) == False:
             continue
-        if det.readJson(fileName) == False:
+        if JParser.readJson(fileName) == False:
             continue
         path.editSaveName(fileName)
 
@@ -43,21 +43,21 @@ if __name__ == '__main__':
 
             match command[0]:
                 case "save":
-                    odr.writeXodr()
-                    det.writeJson()
+                    Xparser.writeXodr()
+                    JParser.writeJson()
                 case "close":
                     break
                 case "undo":
-                    odr.redoData()
-                    det.redoData()
+                    Xparser.redoData()
+                    JParser.redoData()
                 case "saveName":
                     path.saveName = command[1]
                 case "llm":
                     LLMon = True
 
                 case "width":
-                    odr.pushNewData()
-                    det.pushNewData()
+                    Xparser.pushNewData()
+                    JParser.pushNewData()
                     id = "random"
                     v = 0
                     s = 0
@@ -81,8 +81,8 @@ if __name__ == '__main__':
                     editRoadWidth(id=id, value=v, smooth=s, maxStep=ms, sameHdg=sh, laneIds=li)
 
                 case "slope":
-                    odr.pushNewData()
-                    det.pushNewData()
+                    Xparser.pushNewData()
+                    JParser.pushNewData()
                     id = "random"
                     v = 0
                     m = 'add'
@@ -103,8 +103,8 @@ if __name__ == '__main__':
                     editRoadSlope(id=id, value=v, mode=m, move=mv, maxStep=ms, sameHdg=sh)
 
                 case "fit":
-                    odr.pushNewData()
-                    det.pushNewData()
+                    Xparser.pushNewData()
+                    JParser.pushNewData()
                     id = "random"
                     md = 0.01
                     st = 1.0
@@ -119,8 +119,8 @@ if __name__ == '__main__':
                     initRoadArc(id=id, md=md, st=st)
 
                 case "curve":
-                    odr.pushNewData()
-                    det.pushNewData()
+                    Xparser.pushNewData()
+                    JParser.pushNewData()
                     id = "random"
                     x0, y0, h0, v0 = 0, 0, 0, 0
                     x1, y1, h1, v1 = 0, 0, 0, 0
