@@ -1,10 +1,10 @@
 from collections import deque
 import copy
 
-import src.xodr.xodrParser as Xparser
-import src.json.jsonParser as JParser
-import test
-from src.utils.constants import *
+import Xodr.xodrParser as Xparser
+import Json.jsonParser as JParser
+import Json.vehicleDetector as detector
+from utils.constants import *
 
 def editRoadSlope(id, value, mode, move, maxStep=0, sameHdg=0):
   if mode == 'mul' and move == cons.MOVE_BOTH:
@@ -12,8 +12,8 @@ def editRoadSlope(id, value, mode, move, maxStep=0, sameHdg=0):
     return
   
   if id == "random":
-    test.setCandidates()
-    id = random.choice(test.candidateRoads)
+    detector.setCandidates()
+    id = random.choice(detector.candidateRoads)
     print(id)
 
   Xparser.roadEdits = copy.deepcopy(Xparser.roadBackup)

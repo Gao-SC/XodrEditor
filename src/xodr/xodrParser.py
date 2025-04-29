@@ -1,9 +1,10 @@
 import xml.etree.ElementTree as ET
 import copy
-import src.utils.path as path
-from collections import deque, defaultdict
-from src.utils.constants import *
 from scipy.optimize import root_scalar
+from collections import deque, defaultdict
+
+from utils.constants import *
+import utils.path as path
 
 data = deque()
 def addData(new_val):

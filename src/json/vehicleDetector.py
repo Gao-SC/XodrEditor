@@ -1,9 +1,9 @@
 import heapq
 from collections import defaultdict
 
-import src.xodr.xodrParser as Xparser
-import src.json.jsonParser as JParser
-from src.utils.constants import *
+import Xodr.xodrParser as Xparser
+import Json.jsonParser as JParser
+from utils.constants import *
 
 candidateRoads = []
 candidateLanes = []

@@ -6,9 +6,9 @@ import math
 import json
 import heapq
 
-import src.utils.path as path
-import src.xodr.xodrParser as Xparser
-from src.utils.constants import *
+import utils.path as path
+import Xodr.xodrParser as Xparser
+from utils.constants import *
 
 data = deque()
 def addData(new_val):

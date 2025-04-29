@@ -2,15 +2,15 @@ import xml.etree.ElementTree as ET
 from scipy.optimize import least_squares, root_scalar
 from scipy.integrate import quad
 
-import src.xodr.xodrParser as Xparser
-import src.json.jsonParser as JParser
-import test
-from src.utils.constants import *
+import Xodr.xodrParser as Xparser
+import Json.jsonParser as JParser
+import Json.vehicleDetector as detector
+from utils.constants import *
 
 def initRoadArc(id, md, st):
   if id == "random":
-    test.setCandidates()
-    id = random.choice(test.candidateRoads)
+    detector.setCandidates()
+    id = random.choice(detector.candidateRoads)
     print(id)
 
   road = Xparser.roads[id]
@@ -57,8 +57,8 @@ def initRoadArc(id, md, st):
 ## 拟合圆弧时，v0=v1=cos(theta/2)/(3*cos^2(theta/4))
 def editRoadArc(id, x0, y0, v0, h0, x1, y1, v1, h1, gi):
   if id == "random":
-    test.setCandidates()
-    id = random.choice(test.candidateRoads)
+    detector.setCandidates()
+    id = random.choice(detector.candidateRoads)
     print(id)
 
   road = Xparser.roads[id]

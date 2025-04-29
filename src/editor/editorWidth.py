@@ -1,10 +1,11 @@
 import xml.etree.ElementTree as ET
-import src.xodr.xodrParser as Xparser
-import src.json.jsonParser as JParser
-import test
-from src.utils.constants import *
 from collections import deque
 import copy
+
+import Xodr.xodrParser as Xparser
+import Json.jsonParser as JParser
+import Json.vehicleDetector as detector
+from utils.constants import *
 
 def setWidth(width: ET.Element, value, mode, length=0):
   a = getData(width, 'a')
@@ -33,8 +34,8 @@ def setWidth(width: ET.Element, value, mode, length=0):
 ## TODO 因一些原因暂时删除了按比例拓宽
 def editRoadWidth(id, value, smooth=0, maxStep=0, sameHdg=0, laneIds=[]):
   if id == "random":
-    test.setCandidates()
-    id, laneId = random.choice(test.candidateLanes)
+    detector.setCandidates()
+    id, laneId = random.choice(detector.candidateLanes)
     laneIds = [laneId]
     print(id, laneId)
 
