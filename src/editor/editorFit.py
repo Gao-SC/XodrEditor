@@ -1,8 +1,8 @@
 import xml.etree.ElementTree as ET
 from scipy.optimize import least_squares
 
-import Xodr.xodrParser as Xparser
-import Json.jsonParser as JParser
+from Xodr.xodrParser import XParser
+from Json.jsonParser import JParser
 import Json.vehicleDetector as detector
 from utils.constants import *
 from utils.calculator import bezierToPoly3, poly3ToXYH
@@ -18,7 +18,7 @@ class editorFit:
       id = detector.getRandomId1()
       print(id)
 
-    road = Xparser.roads[id]
+    road = XParser.roads[id]
     planView = road.find('planView')
     gs = planView.findall('geometry')
     beziers = self.solveInitialCurve(gs, md, st)
@@ -29,7 +29,7 @@ class editorFit:
     params = []
     for bezier in beziers:
       param = bezierToPoly3(bezier)
-      l = Xparser.getLength(param, 1)
+      l = XParser.getLength(param, 1)
       param.append(x-getData(gs[0], 'x'))
       param.append(y-getData(gs[0], 'y'))
       params.append(param)

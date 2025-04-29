@@ -2,8 +2,8 @@ import xml.etree.ElementTree as ET
 from collections import deque
 import copy
 
-import Xodr.xodrParser as Xparser
-import Json.jsonParser as JParser
+from Xodr.xodrParser import XParser
+from Json.jsonParser import JParser
 import Json.vehicleDetector as detector
 from utils.constants import *
 
@@ -20,21 +20,21 @@ class editorWidth:
       id, laneIds = detector.getRandomId2()
       print("Randomly select: ", id, laneIds)
 
-    Xparser.laneEdits = copy.deepcopy(Xparser.laneBackup)
+    XParser.laneEdits = copy.deepcopy(XParser.laneBackup)
     if laneIds == []:
-      for lid in Xparser.laneEdits[id].keys():
-        Xparser.laneEdits[id][lid] = cons.BOTH_EDITED
-        self.setChange(id, lid, cons.TAIL, maxStep, sameHdg, Xparser.hdgs[id][0])
-        self.setChange(id, lid, cons.HEAD, maxStep, sameHdg, Xparser.hdgs[id][1])
-      value = value/len(Xparser.laneEdits[id].values())
+      for lid in XParser.laneEdits[id].keys():
+        XParser.laneEdits[id][lid] = cons.BOTH_EDITED
+        self.setChange(id, lid, cons.TAIL, maxStep, sameHdg, XParser.hdgs[id][0])
+        self.setChange(id, lid, cons.HEAD, maxStep, sameHdg, XParser.hdgs[id][1])
+      value = value/len(XParser.laneEdits[id].values())
     else:
       for lid in laneIds:
-        Xparser.laneEdits[id][lid] = cons.BOTH_EDITED
-        self.setChange(id, lid, cons.TAIL, maxStep, sameHdg, Xparser.hdgs[id][0])
-        self.setChange(id, lid, cons.HEAD, maxStep, sameHdg, Xparser.hdgs[id][1])
+        XParser.laneEdits[id][lid] = cons.BOTH_EDITED
+        self.setChange(id, lid, cons.TAIL, maxStep, sameHdg, XParser.hdgs[id][0])
+        self.setChange(id, lid, cons.HEAD, maxStep, sameHdg, XParser.hdgs[id][1])
       value = value/len(laneIds)
 
-    for rid, rEdit in Xparser.laneEdits.items():
+    for rid, rEdit in XParser.laneEdits.items():
       for lid, info in rEdit.items():
         if info == cons.TAIL_EDITED and smooth:
           self.setLaneWidth(rid, lid, value, 'addt')
@@ -44,7 +44,7 @@ class editorWidth:
           self.setLaneWidth(rid, lid, value, 'add')
 
   def setLaneWidth(self, id, lid, value, mode):
-    road = Xparser.roads[id]
+    road = XParser.roads[id]
     length = getData(road, 'length')
     # 选取所有sections (默认情况下, 道路将仅有一个laneSection).
     sections = road.find('lanes').findall('laneSection')
@@ -79,7 +79,7 @@ class editorWidth:
             for carInfo in infos:
               pos = carInfo["pos"]
               if pos >= s0 and pos < s1:
-                hdg = Xparser.findHdg(id, pos)
+                hdg = XParser.findHdg(id, pos)
                 ds = pos-s0
                 dw = delta[0]+delta[1]*ds+delta[2]*ds**2+delta[3]*ds**3
                 dw = dw if laneId != lid else dw/2
@@ -99,7 +99,7 @@ class editorWidth:
     queue = deque()
     step = 0
 
-    for info in Xparser.laneConnections[id][lid][int(di)]:
+    for info in XParser.laneConnections[id][lid][int(di)]:
       queue.append({"id": info[0], 'lid': info[1], "di": info[2], "step": 0})
 
     while len(queue) > 0:
@@ -110,8 +110,8 @@ class editorWidth:
       step = item['step']
 
       if sameHdg:
-        angle0 = (Xparser.hdgs[id][0]-hdg)%(2*math.pi)
-        angle1 = (Xparser.hdgs[id][1]-hdg)%(2*math.pi)
+        angle0 = (XParser.hdgs[id][0]-hdg)%(2*math.pi)
+        angle1 = (XParser.hdgs[id][1]-hdg)%(2*math.pi)
         m1, m2, m3, m4 = math.pi/4, math.pi/4*3, math.pi/4*5, math.pi/4*7
         if angle0 > m1 and angle0 < m2 or angle0 > m3 and angle0 < m4:
           step = maxStep
@@ -119,35 +119,35 @@ class editorWidth:
           step = maxStep
 
       if step < maxStep:
-        match Xparser.laneEdits[id][lid]:
+        match XParser.laneEdits[id][lid]:
           case cons.NOT_EDITED | cons.TAIL_EDITED | cons.HEAD_EDITED:
-            Xparser.laneEdits[id][lid] = cons.BOTH_EDITED
-            for info in Xparser.laneConnections[id][lid][0]:
+            XParser.laneEdits[id][lid] = cons.BOTH_EDITED
+            for info in XParser.laneConnections[id][lid][0]:
               queue.append({"id": info[0], "lid": info[1], "di": info[2], "step": step+1})
-            for info in Xparser.laneConnections[id][lid][1]:
+            for info in XParser.laneConnections[id][lid][1]:
               queue.append({"id": info[0], "lid": info[1], "di": info[2], "step": step+1})
           case _:
             continue
       
       elif step == maxStep and not di:
-        match Xparser.laneEdits[id][lid]:
+        match XParser.laneEdits[id][lid]:
           case cons.NOT_EDITED:
-            Xparser.laneEdits[id][lid] = cons.TAIL_EDITED
+            XParser.laneEdits[id][lid] = cons.TAIL_EDITED
           case cons.HEAD_EDITED:
-            Xparser.laneEdits[id][lid] = cons.BOTH_EDITED
+            XParser.laneEdits[id][lid] = cons.BOTH_EDITED
           case _:
             continue
-        for info in Xparser.laneConnections[id][lid][int(cons.TAIL)]:
+        for info in XParser.laneConnections[id][lid][int(cons.TAIL)]:
           queue.append({"id": info[0], "lid": info[1], "di": info[2], "step": step})
       elif step == maxStep and di:
-        match Xparser.laneEdits[id][lid]:
+        match XParser.laneEdits[id][lid]:
           case cons.NOT_EDITED:
-            Xparser.laneEdits[id][lid] = cons.HEAD_EDITED
+            XParser.laneEdits[id][lid] = cons.HEAD_EDITED
           case cons.TAIL_EDITED:
-            Xparser.laneEdits[id][lid] = cons.BOTH_EDITED
+            XParser.laneEdits[id][lid] = cons.BOTH_EDITED
           case _:
             continue
-        for info in Xparser.laneConnections[id][lid][int(cons.HEAD)]:
+        for info in XParser.laneConnections[id][lid][int(cons.HEAD)]:
           queue.append({"id": info[0], "lid": info[1], "di": info[2], "step": step})
 
   def editWidth(self, width: ET.Element, value, mode, length=0):

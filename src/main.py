@@ -1,11 +1,12 @@
-import Xodr.xodrParser as Xparser
-import Json.jsonParser as JParser
+
 import llm.llm as llm
 import utils.path as path
 from utils.random import getRandomValue
 from utils.pltShow import plt
 from utils.constants import *
 
+from Xodr.xodrParser import XParser
+from Json.jsonParser import JParser
 from editor.editorCurve import editorCurve
 from editor.editorFit import editorFit
 from editor.editorSlope import editorSlope
@@ -18,7 +19,6 @@ if __name__ == '__main__':
     LLMon = False
     commandList = []
 
-    
     editorC = editorCurve()
     editorF = editorFit()
     editorS = editorSlope()
@@ -37,7 +37,7 @@ if __name__ == '__main__':
             commandList = llm.translate()
             continue
 
-        if Xparser.openXodr(fileName) == False:
+        if XParser.openXodr(fileName) == False:
             continue
         if JParser.readJson(fileName) == False:
             continue
@@ -55,20 +55,20 @@ if __name__ == '__main__':
 
             match command[0]:
                 case "save":
-                    Xparser.writeXodr()
+                    XParser.writeXodr()
                     JParser.writeJson()
                 case "close":
                     break
                 case "undo":
-                    Xparser.redoData()
-                    JParser.redoData()
+                    XParser.redoData()
+                    JParser.undo()
                 case "saveName":
                     path.saveName = command[1]
                 case "llm":
                     LLMon = True
 
                 case "width":
-                    Xparser.pushNewData()
+                    XParser.pushNewData()
                     JParser.pushNewData()
                     id = "random"
                     v = 0
@@ -93,7 +93,7 @@ if __name__ == '__main__':
                     editorW.edit(id=id, value=v, smooth=s, maxStep=ms, sameHdg=sh, laneIds=li)
 
                 case "slope":
-                    Xparser.pushNewData()
+                    XParser.pushNewData()
                     JParser.pushNewData()
                     id = "random"
                     v = 0
@@ -115,7 +115,7 @@ if __name__ == '__main__':
                     editorS.edit(id=id, value=v, mode=m, move=mv, maxStep=ms, sameHdg=sh)
 
                 case "fit":
-                    Xparser.pushNewData()
+                    XParser.pushNewData()
                     JParser.pushNewData()
                     id = "random"
                     md = 0.01
@@ -131,7 +131,7 @@ if __name__ == '__main__':
                     editorF.edit(id=id, md=md, st=st)
 
                 case "curve":
-                    Xparser.pushNewData()
+                    XParser.pushNewData()
                     JParser.pushNewData()
                     id = "random"
                     x0, y0, h0, v0 = 0, 0, 0, 0
@@ -154,6 +154,6 @@ if __name__ == '__main__':
                             case _: print("Illegal parameter!")
                     
                     if gi == "random":
-                        id, lenGs = editorC.edit(id=id, md=0.01, st=1.0)
+                        id, lenGs = editorF.edit(id=id, md=0.01, st=1.0)
                         gi = random.randrange(0, lenGs)
                     editorC.edit(id=id, x0=x0, y0=y0, h0=h0, v0=v0, x1=x1, y1=y1, h1=h1, v1=v1, gi=gi)
