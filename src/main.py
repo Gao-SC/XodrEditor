@@ -2,15 +2,27 @@ import Xodr.xodrParser as Xparser
 import Json.jsonParser as JParser
 import llm.llm as llm
 import utils.path as path
+from utils.random import getRandomValue
+from utils.pltShow import plt
 from utils.constants import *
-from editor.editorWidth import *
-from editor.editorSlope import *
-from editor.editorCurve import *
+
+from editor.editorCurve import editorCurve
+from editor.editorFit import editorFit
+from editor.editorSlope import editorSlope
+from editor.editorWidth import editorWidth
 from test import *
+
+import random
 
 if __name__ == '__main__':
     LLMon = False
     commandList = []
+
+    
+    editorC = editorCurve()
+    editorF = editorFit()
+    editorS = editorSlope()
+    editorW = editorWidth()
 
     plt.ion()
     while True:
@@ -78,7 +90,7 @@ if __name__ == '__main__':
                                     li.append(lane)
                             case _: print("Illegal parameter!")
 
-                    editRoadWidth(id=id, value=v, smooth=s, maxStep=ms, sameHdg=sh, laneIds=li)
+                    editorW.edit(id=id, value=v, smooth=s, maxStep=ms, sameHdg=sh, laneIds=li)
 
                 case "slope":
                     Xparser.pushNewData()
@@ -100,7 +112,7 @@ if __name__ == '__main__':
                             case 'sh': sh = int(param[1])
                             case _: print("Illegal parameter!")
 
-                    editRoadSlope(id=id, value=v, mode=m, move=mv, maxStep=ms, sameHdg=sh)
+                    editorS.edit(id=id, value=v, mode=m, move=mv, maxStep=ms, sameHdg=sh)
 
                 case "fit":
                     Xparser.pushNewData()
@@ -116,7 +128,7 @@ if __name__ == '__main__':
                             case 'st': st = getRandomValue(param[1])
                             case _: print("Illegal parameter!")
 
-                    initRoadArc(id=id, md=md, st=st)
+                    editorF.edit(id=id, md=md, st=st)
 
                 case "curve":
                     Xparser.pushNewData()
@@ -142,6 +154,6 @@ if __name__ == '__main__':
                             case _: print("Illegal parameter!")
                     
                     if gi == "random":
-                        id, lenGs = initRoadArc(id=id, md=0.01, st=1.0)
+                        id, lenGs = editorC.edit(id=id, md=0.01, st=1.0)
                         gi = random.randrange(0, lenGs)
-                    editRoadArc(id=id, x0=x0, y0=y0, h0=h0, v0=v0, x1=x1, y1=y1, h1=h1, v1=v1, gi=gi)
+                    editorC.edit(id=id, x0=x0, y0=y0, h0=h0, v0=v0, x1=x1, y1=y1, h1=h1, v1=v1, gi=gi)
