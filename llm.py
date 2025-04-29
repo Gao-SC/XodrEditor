@@ -15,8 +15,6 @@ import websocket
 answer = ""
 isFirstcontent = False
 
-### 对话加入第一轮：提供生成指令的规则。
-
 APPID      = "208533ae"
 API_SECRET = "NGVlYzU4MzQxYmY2YmFmN2JjNDY3MmE0"
 API_KEY    = "1f3289b06334a5eb83ffce8c319a9f9f"
@@ -124,7 +122,6 @@ class Ws_Param(object):
         url = self.Spark_url + '?' + urlencode(v)
         return url
 
-
 def onError(ws, error):
     print("error: ", error)
 
@@ -133,9 +130,11 @@ def onClose(ws, one, two):
 
 def onOpen(ws):
     thread.start_new_thread(run, (ws,))
+
 def run(ws, *args):
     data = json.dumps(genParams(appid=ws.appid, domain= ws.domain,question=ws.question))
     ws.send(data)
+
 def onMessage(ws, message):
     print("message: ", message)
     data = json.loads(message)
@@ -148,21 +147,20 @@ def onMessage(ws, message):
         choices = data["payload"]["choices"]
         status = choices["status"]
         text = choices['text'][0]
-        if ( 'reasoning_content' in text and '' != text['reasoning_content']):
+        if 'reasoning_content' in text and '' != text['reasoning_content']:
             reasoning_content = text["reasoning_content"]
             print(reasoning_content, end="")
             global isFirstcontent
             isFirstcontent = True
 
-        if('content' in text and '' != text['content']):
+        if 'content' in text and '' != text['content']:
             content = text["content"]
-            if(True == isFirstcontent):
-                print("\n*******************以上为思维链内容，模型回复内容如下********************\n")
+            if isFirstcontent:
+                print("\n以上为思维链内容, 模型回复内容如下********************\n")
             print(content, end="")
             isFirstcontent = False
         global answer
         answer += content
-        # print(1)
         if status == 2:
             ws.close()
 

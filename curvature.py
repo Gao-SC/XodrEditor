@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as ET
-from scipy.optimize import least_squares
-from scipy.optimize import root_scalar
+from scipy.optimize import least_squares, root_scalar
+from scipy.integrate import quad
+
 import odrparser as odr
 import detector as det
 import test

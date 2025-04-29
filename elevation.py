@@ -1,8 +1,9 @@
+from collections import deque
 import copy
+
 import odrparser as odr
 import detector as det
 import test
-from collections import deque
 from constants import *
 
 def editRoadSlope(id, value, mode, move, maxStep=0, sameHdg=0):

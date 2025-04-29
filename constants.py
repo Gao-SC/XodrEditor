@@ -1,6 +1,8 @@
 import math
 import numpy
 from scipy.integrate import quad
+
+## 以下为定义的常量
 class cons:
   NOT_EDITED = 0
   TAIL_EDITED = 1
@@ -19,6 +21,7 @@ class cons:
   TAIL = 0
   HEAD = 1
 
+## 以下为通用的工具类 
 getData = lambda a, b :float(a.get(b))
 setData = lambda a, b, c :a.set(b, str(c))
 
