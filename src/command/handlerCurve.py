@@ -1,0 +1,40 @@
+from editor.editorCurve import editorCurve
+from editor.editorFit import editorFit
+from Xodr.xodrParser import XParser
+from Json.jsonParser import JParser
+from utils.random import *
+
+class handlerCurve:
+  def __init__(self):
+    self.editorC = editorCurve()
+    self.editorF = editorFit()
+
+  def handle(self, command):
+    XParser.pushNewData()
+    JParser.pushNewData()
+    x0, y0, h0, v0 = 0, 0, 0, 0
+    x1, y1, h1, v1 = 0, 0, 0, 0
+    gi = "random"
+    for i in range(1, len(command)):
+      param = command[i].split('=')
+      match param[0]:
+        case 'id': id = param[1]
+        case 'x0': x0 = getRandomValue(param[1])
+        case 'y0': y0 = getRandomValue(param[1])
+        case 'h0': h0 = getRandomValue(param[1])
+        case 'v0': v0 = getRandomValue(param[1])
+        case 'x1': x1 = getRandomValue(param[1])
+        case 'y1': y1 = getRandomValue(param[1])
+        case 'h1': h1 = getRandomValue(param[1])
+        case 'v1': v1 = getRandomValue(param[1])
+        case 'gi': 
+          if param[1] != 'random':  gi = int(param[1])
+        case _: print("Illegal parameter!")
+
+    if gi == "random":
+      id, lenGs = self.editorF.edit(id=id, md=0.01, st=1.0)
+      gi = getRandomInt(lenGs)
+      self.editorC.edit(id=id, x0=x0, y0=y0, h0=h0, v0=v0, x1=x1, y1=y1, h1=h1, v1=v1, gi=gi)
+
+handlerC = handlerCurve()
+

@@ -5,7 +5,7 @@ from Xodr.xodrParser import XParser
 from Json.carDetector import detector
 from utils.constants import *
 
-class editoMark(editor):
+class editorMark(editor):
   def __init__(self):
     pass
       

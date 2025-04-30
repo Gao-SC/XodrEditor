@@ -1,0 +1,25 @@
+from editor.editorFit import editorFit
+from Xodr.xodrParser import XParser
+from Json.jsonParser import JParser
+from utils.random import *
+
+class handlerFit:
+  def __init__(self):
+    self.editorF = editorFit()
+
+  def handle(self, command):
+    XParser.pushNewData()
+    JParser.pushNewData()
+    md = 0.01
+    st = 1.0
+    for i in range(1, len(command)):
+      param = command[i].split('=')
+      match param[0]:
+        case 'id': id = param[1]
+        case 'md': md = getRandomValue(param[1])
+        case 'st': st = getRandomValue(param[1])
+        case _: print("Illegal parameter!")
+
+    self.editorF.edit(id=id, md=md, st=st)
+
+handlerF = handlerFit()
