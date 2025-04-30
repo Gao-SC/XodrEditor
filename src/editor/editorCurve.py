@@ -1,22 +1,25 @@
 import xml.etree.ElementTree as ET
+from editor.editor import editor
 
 from Xodr.xodrParser import XParser
+from Xodr.xodrDataGetter import dataGetter
 from Json.jsonParser import JParser
-import Json.vehicleDetector as detector
+from Json.carDetector import detector
+
 from utils.constants import *
 from utils.calculator import bezierToPoly3
 from utils.pltShow import showCurve
 
-class editorCurve:
+class editorCurve(editor):
   def __init__(self):
-    pass
+    editor.__init__(self)
 
-  ## 拟合圆弧时，v0=v1=cos(theta/2)/(3*cos^2(theta/4))
+  ## 拟合圆弧时, v0=v1=cos(theta/2)/(3*cos^2(theta/4))
+  ## 参数含义见 readme
   def edit(self, id, x0, y0, v0, h0, x1, y1, v1, h1, gi):
     if id == "random":
       detector.setCandidates()
       id = detector.getRandomId1()
-      print(id)
 
     road = XParser.roads[id]
     planView = road.find('planView')
@@ -87,66 +90,6 @@ class editorCurve:
     showCurve(params)
     self.rectifyRoadData(road, lengthNew)
 
-  ## PRIVATE METHODS
-
-  def rectifyRoadData(self, road, length_new):
-    length = getData(road, "length")
-    setData(road, 'length', length_new)
-    sections = road.find('lanes').findall('laneSection')
-    elevas = road.find('elevationProfile').findall('elevation')
-    widths = road.find('lanes').findall('.//width')
-    k_l = length_new/length
-    for section in sections:
-      setData(section, 's', getData(section, 's')*k_l)
-    for eleva in elevas:
-      setData(eleva, 's', getData(eleva, 's')*k_l)
-      setData(eleva, 'b', getData(eleva, 'b')/k_l)
-      setData(eleva, 'c', getData(eleva, 'c')/(k_l**2))
-      setData(eleva, 'd', getData(eleva, 'd')/(k_l**3))
-    for width in widths:
-      setData(width, 'sOffset', getData(width, 'sOffset')*k_l)
-      setData(width, 'b', getData(width, 'b')/k_l)
-      setData(width, 'c', getData(width, 'c')/(k_l**2))
-      setData(width, 'd', getData(width, 'd')/(k_l**3))
-
-    gs = road.find('planView').findall('geometry')
-    for infos in JParser.carData[-1][id].values():
-      for carInfo in infos:
-        carInfo["pos"] *= k_l
-        for i in range(len(gs)):
-          s0 = getData(gs[i], "s")
-          s1 = getData(road, "length") if i == len(gs)-1 else getData(gs[i+1], "s")
-          
-          if carInfo["pos"] >= s0 and carInfo["pos"] < s1:
-            hdg  = getData(gs[i], 'hdg')
-            x, y = getData(gs[i], 'x'), getData(gs[i], 'y')
-            poly = gs[i].find('paramPoly3')
-            bU, cU, dU = getData(poly, 'bU'), getData(poly, 'cU'), getData(poly, 'dU')
-            bV, cV, dV = getData(poly, 'bV'), getData(poly, 'cV'), getData(poly, 'dV')
-            t = carInfo["pos"]-s0
-            u = bU*t+cU*t**2+dU*t**3
-            v = bV*t+cV*t**2+dV*t**3
-            x += u*math.cos(hdg)-v*math.sin(hdg)
-            y += u*math.sin(hdg)+v*math.cos(hdg)
-            hdg += math.atan2(bV+2*cV*t+3*dV*t**2, bU+2*cU*t+3*dU*t**2)
-
-            x += carInfo["dis"]*math.sin(hdg)
-            y -= carInfo["dis"]*math.cos(hdg)
-            ord = JParser.getOrd(carInfo)
-            ord["position"]['x'] = x
-            ord["position"]['z'] = y
-            if ord.get("angle") != None:
-              if carInfo["dis"] > 0:
-                ord["angle"]["y"] =  hdg*180/math.pi
-              else:
-                ord["angle"]["y"] = -hdg*180/math.pi
-            else:
-              if carInfo["dis"] > 0:
-                ord["rotation"]["y"] =  hdg*180/math.pi
-              else:
-                ord["rotation"]["y"] = -hdg*180/math.pi
-            break
-
   def getGBezier(self, g):
     x, y, l0, l1 = 0, 0, 1, 1
     h0, h1 = getData(g, 'hdg'), getData(g, 'hdg')
@@ -156,8 +99,7 @@ class editorCurve:
       y = getData(g, 'length')*math.sin(h0)
     poly = g.find('paramPoly3')
     if poly != None:
-      bU, cU, dU = getData(poly, 'bU'), getData(poly, 'cU'), getData(poly, 'dU')
-      bV, cV, dV = getData(poly, 'bV'), getData(poly, 'cV'), getData(poly, 'dV')
+      bU, cU, dU, bV, cV, dV = dataGetter.getPoly3Params(poly)
       x_, y_ = bU+cU+dU, bV+cV+dV
       x = x_*math.cos(h0)-y_*math.sin(h0)
       y = x_*math.sin(h0)+y_*math.cos(h0)

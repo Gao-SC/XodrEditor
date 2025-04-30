@@ -2,12 +2,13 @@ import xml.etree.ElementTree as ET
 from collections import deque
 import copy
 
+from editor.editor import editor
 from Xodr.xodrParser import XParser
 from Json.jsonParser import JParser
-import Json.vehicleDetector as detector
+from Json.carDetector import detector
 from utils.constants import *
 
-class editorWidth:
+class editorWidth(editor):
   def __init__(self):
     pass
       
@@ -17,8 +18,8 @@ class editorWidth:
   def edit(self, id, value, smooth=0, maxStep=0, sameHdg=0, laneIds=[]):
     if id == "random":
       detector.setCandidates()
-      id, laneIds = detector.getRandomId2()
-      print("Randomly select: ", id, laneIds)
+      id, lid = detector.getRandomId2()
+      laneIds = [lid]
 
     XParser.laneEdits = copy.deepcopy(XParser.laneBackup)
     if laneIds == []:
@@ -71,7 +72,7 @@ class editorWidth:
           s0 = S+getData(widths[j], "sOffset")
           s1 = S+getData(road, "length") if j == widthNum-1 else getData(widths[j+1], "sOffset")
 
-          for laneId, infos in JParser.carData[-1][id].items():
+          for laneId, infos in JParser.carPosition[-1][id].items():
             if int(laneId) < 0 < int(lid) or int(laneId) > 0 > int(lid):
               continue
             if int(lid) > int(laneId) > 0 or int(lid) < int(laneId) < 0:

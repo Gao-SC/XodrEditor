@@ -1,14 +1,17 @@
 import xml.etree.ElementTree as ET
 from scipy.optimize import least_squares
+from editor.editor import editor
 
 from Xodr.xodrParser import XParser
+from Xodr.xodrDataGetter import dataGetter
 from Json.jsonParser import JParser
-import Json.vehicleDetector as detector
+from Json.carDetector import detector
+
 from utils.constants import *
 from utils.calculator import bezierToPoly3, poly3ToXYH
 from utils.pltShow import showCurve
 
-class editorFit:
+class editorFit(editor):
   def __init__(self):
     pass
   
@@ -16,7 +19,6 @@ class editorFit:
     if id == "random":
       detector.setCandidates()
       id = detector.getRandomId1()
-      print(id)
 
     road = XParser.roads[id]
     planView = road.find('planView')
@@ -177,7 +179,7 @@ class editorFit:
       setData(width, 'd', getData(width, 'd')/(k_l**3))
 
     gs = road.find('planView').findall('geometry')
-    for infos in JParser.carData[-1][id].values():
+    for infos in JParser.carPosition[-1][id].values():
       for carInfo in infos:
         carInfo["pos"] *= k_l
         for i in range(len(gs)):
@@ -188,8 +190,7 @@ class editorFit:
             hdg  = getData(gs[i], 'hdg')
             x, y = getData(gs[i], 'x'), getData(gs[i], 'y')
             poly = gs[i].find('paramPoly3')
-            bU, cU, dU = getData(poly, 'bU'), getData(poly, 'cU'), getData(poly, 'dU')
-            bV, cV, dV = getData(poly, 'bV'), getData(poly, 'cV'), getData(poly, 'dV')
+            bU, cU, dU, bV, cV, dV = dataGetter.getPoly3Params(poly)
             t = carInfo["pos"]-s0
             u = bU*t+cU*t**2+dU*t**3
             v = bV*t+cV*t**2+dV*t**3
@@ -227,8 +228,7 @@ class editorFit:
       poly = g.find('paramPoly3')
       if poly != None:
         while length > position:
-          bU, cU, dU = getData(poly, 'bU'), getData(poly, 'cU'), getData(poly, 'dU')
-          bV, cV, dV = getData(poly, 'bV'), getData(poly, 'cV'), getData(poly, 'dV')
+          bU, cU, dU, bV, cV, dV = dataGetter.getPoly3Params(poly)
           dx, dy, dh = poly3ToXYH(bU, cU, dU, bV, cV, dV, position)
           xs.append(x+dx*math.cos(h)-dy*math.sin(h))
           ys.append(y+dx*math.sin(h)+dy*math.cos(h))

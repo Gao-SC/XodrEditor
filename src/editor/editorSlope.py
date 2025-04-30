@@ -1,12 +1,14 @@
 from collections import deque
 import copy
 
+from editor.editor import editor
 from Xodr.xodrParser import XParser
 from Json.jsonParser import JParser
-import Json.vehicleDetector as detector
+from Json.carDetector import detector
+
 from utils.constants import *
 
-class editorSlope:
+class editorSlope(editor):
   def __init__(self):
     pass
 
@@ -18,7 +20,6 @@ class editorSlope:
     if id == "random":
         detector.setCandidates()
         id = detector.getRandomId1()
-        print(id)
 
     XParser.roadEdits = copy.deepcopy(XParser.roadBackup)
     XParser.roadEdits[id] = cons.BOTH_LOCKED
@@ -78,7 +79,7 @@ class editorSlope:
       elif move == cons.MOVE_HEAD:
         setData(e, 'a', getData(e, 'a')+slope*s0)
 
-      for infos in JParser.carData[-1][id].values():
+      for infos in JParser.carPosition[-1][id].values():
         for carInfo in infos:
           pos = carInfo["pos"]
           if pos >= s0 and pos < s1:

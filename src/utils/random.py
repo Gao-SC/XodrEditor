@@ -8,3 +8,6 @@ def getRandomValue(string):
   else:
     v = float(valueList[0])
   return v
+
+def getRandomInt(num):
+  return random.randrange(0, num)
