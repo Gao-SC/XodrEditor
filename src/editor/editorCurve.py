@@ -3,7 +3,6 @@ from editor.editor import editor
 
 from Xodr.xodrParser import XParser
 from Xodr.xodrDataGetter import dataGetter
-from Json.jsonParser import JParser
 from Json.carDetector import detector
 
 from utils.constants import *

@@ -1,10 +1,12 @@
+from command.handler import handler
 from editor.editorSlope import editorSlope
 from Xodr.xodrParser import XParser
 from Json.jsonParser import JParser
 from utils.random import *
 
-class handlerSlope:
+class handlerSlope(handler):
   def __init__(self):
+    handler.__init__(self)
     self.editorSl = editorSlope()
 
   def handle(self, command):

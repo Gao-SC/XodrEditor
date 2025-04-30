@@ -10,7 +10,7 @@ from utils.constants import *
 
 class editorWidth(editor):
   def __init__(self):
-    pass
+    editor.__init__(self)
       
   ## 修改指定道路的指定车道的宽度.
   ## 默认仅有一个LaneSection.

@@ -10,7 +10,7 @@ from utils.constants import *
 
 class editorSlope(editor):
   def __init__(self):
-    pass
+    editor.__init__(self)
 
   def edit(self, id, value, mode, move, maxStep=0, sameHdg=0):
     if mode == 'mul' and move == cons.MOVE_BOTH:

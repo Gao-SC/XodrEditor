@@ -1,10 +1,12 @@
+from command.handler import handler
 from editor.editorWidth import editorWidth
 from Xodr.xodrParser import XParser
 from Json.jsonParser import JParser
 from utils.random import *
 
-class handlerWidth:
+class handlerWidth(handler):
   def __init__(self):
+    handler.__init__(self)
     self.editorW = editorWidth()
 
   def handle(self, command):

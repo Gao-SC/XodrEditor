@@ -13,7 +13,7 @@ from utils.pltShow import showCurve
 
 class editorFit(editor):
   def __init__(self):
-    pass
+    editor.__init__(self)
   
   def edit(self, id, md, st):
     if id == "random":

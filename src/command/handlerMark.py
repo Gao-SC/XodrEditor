@@ -1,12 +1,13 @@
+from command.handler import handler
 from editor.editorMark import editorMark
 from Xodr.xodrParser import XParser
 from Json.jsonParser import JParser
-from utils.random import *
 
 from collections import defaultdict
 
-class handlerMark:
+class handlerMark(handler):
   def __init__(self):
+    handler.__init__(self)
     self.editorM = editorMark()
 
   def handle(self, command):
@@ -32,5 +33,5 @@ class handlerMark:
             infoMap[nameValue[0]] = nameValue[1]
 
     self.editorM.edit(id=id, laneId=li, infoMap=infoMap)
-    
+
 handlerM = handlerMark()

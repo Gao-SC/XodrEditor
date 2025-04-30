@@ -1,11 +1,13 @@
+from command.handler import handler
 from editor.editorCurve import editorCurve
 from editor.editorFit import editorFit
 from Xodr.xodrParser import XParser
 from Json.jsonParser import JParser
 from utils.random import *
 
-class handlerCurve:
+class handlerCurve(handler):
   def __init__(self):
+    handler.__init__(self)
     self.editorC = editorCurve()
     self.editorF = editorFit()
 

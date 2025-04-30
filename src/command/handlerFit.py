@@ -1,10 +1,12 @@
+from command.handler import handler
 from editor.editorFit import editorFit
 from Xodr.xodrParser import XParser
 from Json.jsonParser import JParser
 from utils.random import *
 
-class handlerFit:
+class handlerFit(handler):
   def __init__(self):
+    handler.__init__(self)
     self.editorF = editorFit()
 
   def handle(self, command):
