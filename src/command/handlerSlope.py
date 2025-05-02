@@ -13,14 +13,14 @@ class handlerSlope(handler):
     XParser.pushNewData()
     JParser.pushNewData()
     v = 0
-    m = 'add'
+    m = 'mul'
     mv = 0
     ms = 0
     sh = False
     for i in range(1, len(command)):
       param = command[i].split('=')
       match param[0]:
-        case 'id': id = param[1]
+        case 'id': id = getRandomId1(param[1])
         case 'v': v = getRandomValue(param[1])
         case 'm': m = param[1]
         case 'mv': mv = int(param[1])

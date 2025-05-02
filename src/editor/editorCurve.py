@@ -16,10 +16,6 @@ class editorCurve(editor):
   ## 拟合圆弧时, v0=v1=cos(theta/2)/(3*cos^2(theta/4))
   ## 参数含义见 readme
   def edit(self, id, x0, y0, v0, h0, x1, y1, v1, h1, gi):
-    if id == "random":
-      detector.setCandidates()
-      id = detector.getRandomId1()
-
     road = XParser.roads[id]
     planView = road.find('planView')
     gs = planView.findall('geometry')

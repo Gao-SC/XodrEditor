@@ -11,10 +11,6 @@ class editorMark(editor):
       
   ## 修改指定道路的指定车道的道路线信息.
   def edit(self, id, laneId, infoMap):
-    if id == "random":
-      detector.setCandidates()
-      id = detector.getRandomId1()
-
     road = XParser.roads[id]
     sections = road.find("lanes").findall("laneSection")
 

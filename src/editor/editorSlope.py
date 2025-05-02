@@ -16,10 +16,6 @@ class editorSlope(editor):
     if mode == 'mul' and move == cons.MOVE_BOTH:
       print('Params error!')
       return
-    
-    if id == "random":
-        detector.setCandidates()
-        id = detector.getRandomId1()
 
     XParser.roadEdits = copy.deepcopy(XParser.roadBackup)
     XParser.roadEdits[id] = cons.BOTH_LOCKED

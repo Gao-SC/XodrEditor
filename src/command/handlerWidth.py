@@ -20,7 +20,7 @@ class handlerWidth(handler):
     for i in range(1, len(command)):
       param = command[i].split('=')
       match param[0]:
-        case 'id': id = param[1]
+        case 'id': id, li = getRandomId2(param[1])
         case 'v': v = getRandomValue(param[1])
         case 's': s = int(param[1])
         case 'ms': ms = int(param[1])

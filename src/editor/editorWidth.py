@@ -16,11 +16,6 @@ class editorWidth(editor):
   ## 默认仅有一个LaneSection.
   ## 因车道宽度不均匀可能导致按比例改变宽度时, 可能会出现道路宽度无法对齐的情况, 因此删除了按比例拓宽选项.
   def edit(self, id, value, smooth=0, maxStep=0, sameHdg=0, laneIds=[]):
-    if id == "random":
-      detector.setCandidates()
-      id, lid = detector.getRandomId2()
-      laneIds = [lid]
-
     XParser.laneEdits = copy.deepcopy(XParser.laneBackup)
     if laneIds == []:
       for lid in XParser.laneEdits[id].keys():

@@ -16,10 +16,6 @@ class editorFit(editor):
     editor.__init__(self)
   
   def edit(self, id, md, st):
-    if id == "random":
-      detector.setCandidates()
-      id = detector.getRandomId1()
-
     road = XParser.roads[id]
     planView = road.find('planView')
     gs = planView.findall('geometry')

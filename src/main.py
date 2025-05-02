@@ -1,5 +1,4 @@
 
-import llm.llm as llm
 import utils.path as path
 from utils.random import *
 from utils.constants import *
@@ -7,6 +6,7 @@ from utils.constants import *
 from Xodr.xodrParser import XParser
 from Json.jsonParser import JParser
 
+from llm.llm 								import chater
 from command.handlerCurve 	import handlerC
 from command.handlerFit 		import handlerF
 from command.handlerMark 		import handlerM
@@ -17,10 +17,9 @@ from command.handlerWidth 	import handlerW
 import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
-	LLMon = False
 	fileName, commandList = None, []
-
 	plt.ion()
+
 	while True:
 		if commandList != []:
 			fileName = commandList[0]
@@ -31,14 +30,15 @@ if __name__ == '__main__':
 		if fileName == 'exit':
 			plt.ioff()
 			break
+
 		if fileName == 'llm':
-			commandList = llm.translate()
+			commandList = chater.translate()
 			continue
 
 		if XParser.openXodr(fileName) == False:
 			continue
 		if JParser.readJson(fileName) == False:
-			continue
+			print("The json file is not exist.")
 		path.editSaveName(fileName)
 
 		while True:
@@ -50,8 +50,6 @@ if __name__ == '__main__':
 				command = input().split()
 				if command == []:
 					continue
-
-			id = "random"
 
 			match command[0]:
 				case "save":
@@ -65,8 +63,9 @@ if __name__ == '__main__':
 					XParser.redoData()
 					JParser.undo()
 
-				case "saveName":
-					path.saveName = command[1]
+				case "savename":
+					path.editSaveName(command[1])
+					print("Save name is now: ", path.saveName)
 
 				case "curve":
 					handlerC.handle(command)
@@ -85,3 +84,6 @@ if __name__ == '__main__':
 
 				case "width":
 					handlerW.handle(command)
+
+				case _:
+					print("Illegal command!")
