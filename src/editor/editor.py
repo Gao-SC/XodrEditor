@@ -1,8 +1,9 @@
-from utils.constants import *
+import math
 
+from utils.lambdas import *
 from Json.jsonParser import JParser
 
-class editor:
+class editor(object):
   def __init__(self):
     pass
   

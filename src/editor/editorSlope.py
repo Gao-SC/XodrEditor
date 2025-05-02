@@ -1,52 +1,53 @@
 from collections import deque
 import copy
+import math
 
 from editor.editor import editor
 from Xodr.xodrParser import XParser
 from Json.jsonParser import JParser
-from Json.carDetector import detector
 
-from utils.constants import *
+from utils.definitions import *
+from utils.lambdas import *
 
 class editorSlope(editor):
   def __init__(self):
     editor.__init__(self)
 
   def edit(self, id, value, mode, move, maxStep=0, sameHdg=0):
-    if mode == 'mul' and move == cons.MOVE_BOTH:
+    if mode == 'mul' and move == defs.MOVE_BOTH:
       print('Params error!')
       return
 
     XParser.roadEdits = copy.deepcopy(XParser.roadBackup)
-    XParser.roadEdits[id] = cons.BOTH_LOCKED
+    XParser.roadEdits[id] = defs.BOTH_LOCKED
     
     road = XParser.roads[id]
     link = road.find('link')
     pre = link.find('predecessor')
     suc = link.find('successor')
-    if move == cons.MOVE_HEAD and pre != None: 
-      self.lockChange(cons.TAIL, id)
-    if move == cons.MOVE_TAIL and suc != None: 
-      self.lockChange(cons.HEAD, id)
+    if move == defs.MOVE_HEAD and pre != None: 
+      self.lockChange(defs.TAIL, id)
+    if move == defs.MOVE_TAIL and suc != None: 
+      self.lockChange(defs.HEAD, id)
 
-    if move != cons.MOVE_HEAD and pre != None:
+    if move != defs.MOVE_HEAD and pre != None:
       hdg = XParser.hdgs[id][0]
-      self.setChange(id, cons.TAIL, maxStep, sameHdg, hdg)
-    if move != cons.MOVE_TAIL and suc != None:
+      self.setChange(id, defs.TAIL, maxStep, sameHdg, hdg)
+    if move != defs.MOVE_TAIL and suc != None:
       hdg = XParser.hdgs[id][1]
-      self.setChange(id, cons.HEAD, maxStep, sameHdg, hdg)
+      self.setChange(id, defs.HEAD, maxStep, sameHdg, hdg)
     
     value = value if mode != 'mul' else value*getData(road, 'length')
     self.setRoadSlope(id, value, move)
     for r in XParser.root.iter('road'):
       newId = r.get('id')
       num = XParser.roadEdits[newId]
-      if num == cons.TAIL_EDITED or num == cons.TAIL_EDITED2:   # change tail
-        self.setRoadSlope(newId, value, cons.MOVE_TAIL)
-      elif num == cons.HEAD_EDITED or num == cons.HEAD_EDITED2: # change head
-        self.setRoadSlope(newId, value, cons.MOVE_HEAD)
-      elif num == cons.BOTH_EDITED:                             # change both
-        self.setRoadSlope(newId, value, cons.MOVE_BOTH)
+      if num == defs.TAIL_EDITED or num == defs.TAIL_EDITED2:   # change tail
+        self.setRoadSlope(newId, value, defs.MOVE_TAIL)
+      elif num == defs.HEAD_EDITED or num == defs.HEAD_EDITED2: # change head
+        self.setRoadSlope(newId, value, defs.MOVE_HEAD)
+      elif num == defs.BOTH_EDITED:                             # change both
+        self.setRoadSlope(newId, value, defs.MOVE_BOTH)
 
   def setRoadSlope(self, id, value, move):
     print(id, value, move)
@@ -57,9 +58,9 @@ class editorSlope(editor):
     length = getData(road, 'length')
 
     slope = 0
-    if move == cons.MOVE_TAIL:
+    if move == defs.MOVE_TAIL:
       slope = value/length*-1
-    elif move == cons.MOVE_HEAD:
+    elif move == defs.MOVE_HEAD:
       slope = value/length
       
     for i in range(elevaNum):
@@ -68,21 +69,22 @@ class editorSlope(editor):
       s1 = getData(road, "length") if i == elevaNum-1 else getData(elevations[i+1], "s")
 
       setData(e, 'b', getData(e, 'b')+slope)
-      if move == cons.MOVE_BOTH:
+      if move == defs.MOVE_BOTH:
         setData(e, 'a', getData(e, 'a')+value)
-      elif move == cons.MOVE_TAIL:
+      elif move == defs.MOVE_TAIL:
         setData(e, 'a', getData(e, 'a')+slope*(s0-length))
-      elif move == cons.MOVE_HEAD:
+      elif move == defs.MOVE_HEAD:
         setData(e, 'a', getData(e, 'a')+slope*s0)
 
+      # rectify the cars' position:
       for infos in JParser.carPosition[-1][id].values():
         for carInfo in infos:
           pos = carInfo["pos"]
           if pos >= s0 and pos < s1:
             de = value
-            if move == cons.MOVE_TAIL:
+            if move == defs.MOVE_TAIL:
               de = slope*(s0-length)
-            elif move == cons.MOVE_HEAD:
+            elif move == defs.MOVE_HEAD:
               de = slope*s0
 
             ord = JParser.getOrd(carInfo)
@@ -95,9 +97,9 @@ class editorSlope(editor):
   def lockChange(self, direction, id):
     for info in XParser.roadConnections[id][direction]:
       if info[1]:
-        XParser.roadEdits[info[0]] = cons.HEAD_LOCKED
+        XParser.roadEdits[info[0]] = defs.HEAD_LOCKED
       else:
-        XParser.roadEdits[info[0]] = cons.TAIL_LOCKED
+        XParser.roadEdits[info[0]] = defs.TAIL_LOCKED
 
   def setChange(self, id, di, maxStep, sameHdg, hdg):
     queue = deque()
@@ -122,44 +124,44 @@ class editorSlope(editor):
     
       if step < maxStep:
         match XParser.roadEdits[id]:
-          case cons.NOT_EDITED | cons.TAIL_EDITED | cons.HEAD_EDITED:
-            XParser.roadEdits[id] = cons.BOTH_EDITED
+          case defs.NOT_EDITED | defs.TAIL_EDITED | defs.HEAD_EDITED:
+            XParser.roadEdits[id] = defs.BOTH_EDITED
             for info in XParser.roadConnections[id][0]:
               queue.append({"id": info[0], "di": info[1], "step": step+1})
             for info in XParser.roadConnections[id][1]:
               queue.append({"id": info[0], "di": info[1], "step": step+1})
-          case cons.TAIL_LOCKED:
-            XParser.roadEdits[id] = cons.HEAD_EDITED2
-            for info in XParser.roadConnections[id][cons.HEAD]:
+          case defs.TAIL_LOCKED:
+            XParser.roadEdits[id] = defs.HEAD_EDITED2
+            for info in XParser.roadConnections[id][defs.HEAD]:
               queue.append({"id": info[0], "di": info[1], "step": step+1})
-          case cons.HEAD_LOCKED:
-            XParser.roadEdits[id] = cons.TAIL_EDITED2
-            for info in XParser.roadConnections[id][cons.TAIL]:
+          case defs.HEAD_LOCKED:
+            XParser.roadEdits[id] = defs.TAIL_EDITED2
+            for info in XParser.roadConnections[id][defs.TAIL]:
               queue.append({"id": info[0], "di": info[1], "step": step+1})
           case _:
             continue
       
-      elif step == maxStep and di == cons.TAIL:
+      elif step == maxStep and di == defs.TAIL:
         match XParser.roadEdits[id]:
-          case cons.NOT_EDITED:
-            XParser.roadEdits[id] = cons.TAIL_EDITED
-          case cons.HEAD_LOCKED:
-            XParser.roadEdits[id] = cons.TAIL_EDITED2
-          case cons.HEAD_EDITED:
-            XParser.roadEdits[id] = cons.BOTH_EDITED
+          case defs.NOT_EDITED:
+            XParser.roadEdits[id] = defs.TAIL_EDITED
+          case defs.HEAD_LOCKED:
+            XParser.roadEdits[id] = defs.TAIL_EDITED2
+          case defs.HEAD_EDITED:
+            XParser.roadEdits[id] = defs.BOTH_EDITED
           case _:
             continue
-        for info in XParser.roadConnections[id][cons.TAIL]:
+        for info in XParser.roadConnections[id][defs.TAIL]:
           queue.append({"id": info[0], "di": info[1], "step": step})
-      elif step == maxStep and di == cons.HEAD:
+      elif step == maxStep and di == defs.HEAD:
         match XParser.roadEdits[id]:
-          case cons.NOT_EDITED:
-            XParser.roadEdits[id] = cons.HEAD_EDITED
-          case cons.TAIL_LOCKED:
-            XParser.roadEdits[id] = cons.HEAD_EDITED2
-          case cons.TAIL_EDITED:
-            XParser.roadEdits[id] = cons.BOTH_EDITED
+          case defs.NOT_EDITED:
+            XParser.roadEdits[id] = defs.HEAD_EDITED
+          case defs.TAIL_LOCKED:
+            XParser.roadEdits[id] = defs.HEAD_EDITED2
+          case defs.TAIL_EDITED:
+            XParser.roadEdits[id] = defs.BOTH_EDITED
           case _:
             continue
-        for info in XParser.roadConnections[id][cons.HEAD]:
+        for info in XParser.roadConnections[id][defs.HEAD]:
           queue.append({"id": info[0], "di": info[1], "step": step})

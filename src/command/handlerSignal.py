@@ -35,15 +35,13 @@ class handlerSignal(handler):
       param = command[i].split('=')
       match param[0]:
         case 'id': id = getRandomId1(param[1])
-        case 'li': li = param[1]
+        case 'si': si = int(param[1])
         case 'info': 
           xList = param[1].split(',')
           for x in xList:
             nameValue = x.split(':')
             infoMap[nameValue[0]] = nameValue[1]
 
-    self.editorM.edit(id=id, laneId=li, infoMap=infoMap)
-
-
+    self.editorSi.edit(id=id, signalId=si, infoMap=infoMap)
 
 handlerSi = handlerSignal()

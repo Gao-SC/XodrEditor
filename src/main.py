@@ -1,15 +1,12 @@
 
 import utils.path as path
-from utils.random import *
-from utils.constants import *
 
-from Xodr.xodrParser import XParser
-from Json.jsonParser import JParser
-
+from Xodr.xodrParser 				import XParser
+from Json.jsonParser 				import JParser
 from llm.llm 								import chater
 from command.handlerCurve 	import handlerC
 from command.handlerFit 		import handlerF
-from command.handlerMark 		import handlerM
+from command.handlerLane 		import handlerL
 from command.handlerSignal	import handlerSi
 from command.handlerSlope 	import handlerSl
 from command.handlerWidth 	import handlerW
@@ -57,6 +54,7 @@ if __name__ == '__main__':
 					JParser.writeJson()
 
 				case "close":
+					plt.close()
 					break
 
 				case "undo":
@@ -74,7 +72,7 @@ if __name__ == '__main__':
 					handlerF.handle(command)
 
 				case "mark":
-					handlerM.handle(command)
+					handlerL.handle(command)
 
 				case "signal":
 					handlerSi.handle(command)

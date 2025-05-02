@@ -1,10 +1,12 @@
 saveName = None
-PATH = "D:\\Users\\cling\\Documents\\Homework\\Codes\\xodr_project\\test\\selected_map\\"
+
+openPath = ".\\test\\input\\"
+savePath = ".\\test\\output\\"
 
 def editSaveName(newName):
   global saveName
   saveName = newName
 
 def editPATH(newPath):
-  global PATH
-  PATH = newPath
+  global openPath
+  openPath = newPath

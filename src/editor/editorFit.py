@@ -1,13 +1,14 @@
 import xml.etree.ElementTree as ET
-from scipy.optimize import least_squares
 from editor.editor import editor
+import math
+import numpy
 
+from scipy.optimize import least_squares
 from Xodr.xodrParser import XParser
 from Xodr.xodrDataGetter import dataGetter
 from Json.jsonParser import JParser
-from Json.carDetector import detector
 
-from utils.constants import *
+from utils.lambdas import *
 from utils.calculator import bezierToPoly3, poly3ToXYH
 from utils.pltShow import showCurve
 

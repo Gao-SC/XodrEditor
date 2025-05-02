@@ -1,26 +1,28 @@
 from command.handler import handler
-from editor.editorMark import editorMark
+from editor.editorLane import editorLane
 from Xodr.xodrParser import XParser
 from Json.jsonParser import JParser
 from utils.random import *
 
 from collections import defaultdict
 
-class handlerMark(handler):
+class handlerLane(handler):
   def __init__(self):
     handler.__init__(self)
-    self.editorM = editorMark()
+    self.editorM = editorLane()
 
   def handle(self, command):
     XParser.pushNewData()
     JParser.pushNewData()
     li = "random"
     infoMap = defaultdict(dict)
-    infoMap["sOffset"]	 	= "0"
-    infoMap['type'] 			= "solid"
-    infoMap['weight'] 		= "standard"
-    infoMap['color'] 			= "standard"
-    infoMap['laneChange'] = "none"
+    infoMap["type"]         = "driving"
+    infoMap["level"]        = "false"
+    infoMap["MsOffset"]	 	  = "0"
+    infoMap['Mtype'] 			  = "solid"
+    infoMap['Mweight'] 		  = "standard"
+    infoMap['Mcolor'] 			= "standard"
+    infoMap['MlaneChange']  = "none"
 
     for i in range(1, len(command)):
       param = command[i].split('=')
@@ -35,4 +37,4 @@ class handlerMark(handler):
 
     self.editorM.edit(id=id, laneId=li, infoMap=infoMap)
 
-handlerM = handlerMark()
+handlerL = handlerLane()

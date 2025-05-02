@@ -1,12 +1,14 @@
 import xml.etree.ElementTree as ET
 from collections import deque
 import copy
+import math
 
 from editor.editor import editor
 from Xodr.xodrParser import XParser
 from Json.jsonParser import JParser
-from Json.carDetector import detector
-from utils.constants import *
+
+from utils.definitions import *
+from utils.lambdas import *
 
 class editorWidth(editor):
   def __init__(self):
@@ -19,24 +21,24 @@ class editorWidth(editor):
     XParser.laneEdits = copy.deepcopy(XParser.laneBackup)
     if laneIds == []:
       for lid in XParser.laneEdits[id].keys():
-        XParser.laneEdits[id][lid] = cons.BOTH_EDITED
-        self.setChange(id, lid, cons.TAIL, maxStep, sameHdg, XParser.hdgs[id][0])
-        self.setChange(id, lid, cons.HEAD, maxStep, sameHdg, XParser.hdgs[id][1])
+        XParser.laneEdits[id][lid] = defs.BOTH_EDITED
+        self.setChange(id, lid, defs.TAIL, maxStep, sameHdg, XParser.hdgs[id][0])
+        self.setChange(id, lid, defs.HEAD, maxStep, sameHdg, XParser.hdgs[id][1])
       value = value/len(XParser.laneEdits[id].values())
     else:
       for lid in laneIds:
-        XParser.laneEdits[id][lid] = cons.BOTH_EDITED
-        self.setChange(id, lid, cons.TAIL, maxStep, sameHdg, XParser.hdgs[id][0])
-        self.setChange(id, lid, cons.HEAD, maxStep, sameHdg, XParser.hdgs[id][1])
+        XParser.laneEdits[id][lid] = defs.BOTH_EDITED
+        self.setChange(id, lid, defs.TAIL, maxStep, sameHdg, XParser.hdgs[id][0])
+        self.setChange(id, lid, defs.HEAD, maxStep, sameHdg, XParser.hdgs[id][1])
       value = value/len(laneIds)
 
     for rid, rEdit in XParser.laneEdits.items():
       for lid, info in rEdit.items():
-        if info == cons.TAIL_EDITED and smooth:
+        if info == defs.TAIL_EDITED and smooth:
           self.setLaneWidth(rid, lid, value, 'addt')
-        elif info == cons.HEAD_EDITED and smooth:
+        elif info == defs.HEAD_EDITED and smooth:
           self.setLaneWidth(rid, lid, value, 'addh')
-        elif info == cons.BOTH_EDITED:
+        elif info == defs.BOTH_EDITED:
           self.setLaneWidth(rid, lid, value, 'add')
 
   def setLaneWidth(self, id, lid, value, mode):
@@ -64,6 +66,8 @@ class editorWidth(editor):
             case 'addh':
               delta = self.editWidth(widths[j], value, 'shead', length)
           
+
+          # rectify the cars' position:
           s0 = S+getData(widths[j], "sOffset")
           s1 = S+getData(road, "length") if j == widthNum-1 else getData(widths[j+1], "sOffset")
 
@@ -116,8 +120,8 @@ class editorWidth(editor):
 
       if step < maxStep:
         match XParser.laneEdits[id][lid]:
-          case cons.NOT_EDITED | cons.TAIL_EDITED | cons.HEAD_EDITED:
-            XParser.laneEdits[id][lid] = cons.BOTH_EDITED
+          case defs.NOT_EDITED | defs.TAIL_EDITED | defs.HEAD_EDITED:
+            XParser.laneEdits[id][lid] = defs.BOTH_EDITED
             for info in XParser.laneConnections[id][lid][0]:
               queue.append({"id": info[0], "lid": info[1], "di": info[2], "step": step+1})
             for info in XParser.laneConnections[id][lid][1]:
@@ -127,23 +131,23 @@ class editorWidth(editor):
       
       elif step == maxStep and not di:
         match XParser.laneEdits[id][lid]:
-          case cons.NOT_EDITED:
-            XParser.laneEdits[id][lid] = cons.TAIL_EDITED
-          case cons.HEAD_EDITED:
-            XParser.laneEdits[id][lid] = cons.BOTH_EDITED
+          case defs.NOT_EDITED:
+            XParser.laneEdits[id][lid] = defs.TAIL_EDITED
+          case defs.HEAD_EDITED:
+            XParser.laneEdits[id][lid] = defs.BOTH_EDITED
           case _:
             continue
-        for info in XParser.laneConnections[id][lid][int(cons.TAIL)]:
+        for info in XParser.laneConnections[id][lid][int(defs.TAIL)]:
           queue.append({"id": info[0], "lid": info[1], "di": info[2], "step": step})
       elif step == maxStep and di:
         match XParser.laneEdits[id][lid]:
-          case cons.NOT_EDITED:
-            XParser.laneEdits[id][lid] = cons.HEAD_EDITED
-          case cons.TAIL_EDITED:
-            XParser.laneEdits[id][lid] = cons.BOTH_EDITED
+          case defs.NOT_EDITED:
+            XParser.laneEdits[id][lid] = defs.HEAD_EDITED
+          case defs.TAIL_EDITED:
+            XParser.laneEdits[id][lid] = defs.BOTH_EDITED
           case _:
             continue
-        for info in XParser.laneConnections[id][lid][int(cons.HEAD)]:
+        for info in XParser.laneConnections[id][lid][int(defs.HEAD)]:
           queue.append({"id": info[0], "lid": info[1], "di": info[2], "step": step})
 
   def editWidth(self, width: ET.Element, value, mode, length=0):
@@ -167,5 +171,3 @@ class editorWidth(editor):
         return [value/length*x, value/length, 0, 0]
       case _:
         return
-      
-## TODO: 将修改json和xodr的部分集成到jsonParser和xodrParser中

@@ -1,6 +1,6 @@
 
 
-class handler:
+class handler(object):
   def __init__(self):
     pass
 

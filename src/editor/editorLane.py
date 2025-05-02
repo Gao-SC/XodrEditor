@@ -2,10 +2,8 @@ import xml.etree.ElementTree as ET
 from editor.editor import editor
 
 from Xodr.xodrParser import XParser
-from Json.carDetector import detector
-from utils.constants import *
 
-class editorMark(editor):
+class editorLane(editor):
   def __init__(self):
     editor.__init__(self)
       
@@ -13,6 +11,8 @@ class editorMark(editor):
   def edit(self, id, laneId, infoMap):
     road = XParser.roads[id]
     sections = road.find("lanes").findall("laneSection")
+
+    attributes = ["type", "level", "MsOffset", "Mtype", "Mweight", "Mcolor", "MlaneChange"]
 
     for section in sections:
       lanes = section.findall(".//lane")
@@ -25,11 +25,11 @@ class editorMark(editor):
         if roadMark == None:
           roadMark = ET.Element("roadMark")
           lane.append(roadMark)
-        
-        roadMark.set("sOffset",     infoMap["sOffset"])
-        roadMark.set("type",        infoMap["typ"])
-        roadMark.set("weight",      infoMap["weight"])
-        roadMark.set("color",       infoMap["color"])
-        roadMark.set("laneChange",  infoMap["laneChange"])
+
+        for a in attributes:
+          if a[0] == 'M':
+            roadMark.set(a[1:], infoMap[a[1:]])
+          else:
+            lane.set(a, infoMap[a])
         break
 
