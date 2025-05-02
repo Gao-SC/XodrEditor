@@ -1,7 +1,7 @@
 from handler.handler import handler
 from editor.editorFit import editorFit
-from Xodr.xodrParser import XParser
-from Json.jsonParser import JParser
+from xodrs.xodrParser import XParser
+from jsons.jsonParser import JParser
 from utils.random import *
 
 class handlerFit(handler):
@@ -12,7 +12,6 @@ class handlerFit(handler):
   def handle(self, command):
     XParser.pushNewData()
     JParser.pushNewData()
-    id = "random"
     md = 0.01
     st = 1.0
     for i in range(1, len(command)):
@@ -22,7 +21,11 @@ class handlerFit(handler):
         case 'md': md = getRandomValue(param[1])
         case 'st': st = getRandomValue(param[1])
         case _: print("Illegal parameter!")
-
+    
+    if 'id' not in locals():
+      print("Id not given!")
+      return "Id not given!"
     self.editorF.edit(id=id, md=md, st=st)
+    return f"fit id={id} md={md} st={st}" 
 
 handlerF = handlerFit()

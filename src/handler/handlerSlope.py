@@ -1,7 +1,7 @@
 from handler.handler import handler
 from editor.editorSlope import editorSlope
-from Xodr.xodrParser import XParser
-from Json.jsonParser import JParser
+from xodrs.xodrParser import XParser
+from jsons.jsonParser import JParser
 from utils.random import *
 
 class handlerSlope(handler):
@@ -12,7 +12,6 @@ class handlerSlope(handler):
   def handle(self, command):
     XParser.pushNewData()
     JParser.pushNewData()
-    id = "random"
     v = 0
     m = 'mul'
     mv = 0
@@ -29,7 +28,11 @@ class handlerSlope(handler):
         case 'sh': sh = int(param[1])
         case _: print("Illegal parameter!")
 
+    if 'id' not in locals():
+      print("Id not given!")
+      return "Id not given!"
     self.editorSl.edit(id=id, value=v, mode=m, move=mv, maxStep=ms, sameHdg=sh)
+    return f"slope id={id} v={v} m={m} ms={ms} sh={sh}" 
 
 
 handlerSl = handlerSlope()

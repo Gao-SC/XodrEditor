@@ -3,10 +3,7 @@ import copy
 import math
 import numpy
 
-from scipy.optimize import root_scalar
-from scipy.integrate import quad
 from collections import deque, defaultdict
-
 from utils.definitions import *
 from utils.lambdas import *
 import utils.path as path
@@ -38,13 +35,13 @@ class xodrParser:
     self.root = new_val
 
   def writeXodr(self):
-    self.data[-1].write(path.openPath+path.saveName+"_test.xodr", encoding="utf-8", xml_declaration=True)
+    self.data[-1].write(path.savePath+path.saveName+"_test.xodr", encoding="utf-8", xml_declaration=True)
     print('Already saved.')
 
   def openXodr(self, name):
     tree = None 
     try:
-      tree = ET.parse(path.openPath+name+".xodr")
+      tree = ET.parse(path.readPath+name+".xodr")
     except Exception:
       print("File not found!")
       return False
@@ -92,42 +89,6 @@ class xodrParser:
     for road in self.root.iter('road'):
       id = road.get('id')
       self.roads[id] = road
-
-  def getLength(self, param, t):
-    bU, cU, dU, bV, cV, dV = param
-    def integrand(p):
-      du = bU+2*cU*p+3*dU*p**2
-      dv = bV+2*cV*p+3*dV*p**2
-      return numpy.sqrt(du**2+dv**2)
-    length, _ = quad(integrand, 0, t)
-    return length
-
-  def getT(self, param, length):
-    def objective(t):
-      return self.getLength(param, t)-length
-    if length == 0:
-      return 0
-    sol = root_scalar(objective, bracket=[0, 1], method='brentq')
-    return sol.root
-
-  def findHdg(self, id, pos):
-    road = self.roads[id]
-    gs = road.find('planView').findall('geometry')
-    for i in range(len(gs)):
-      s0 = getData(gs[i], 's')
-      s1 = getData(road, 'length') if i == len(gs)-1 else getData(gs[i+1], 's')
-      if s0 <= pos < s1:
-        if gs[i].find('line') != None:
-          return getData(gs[i], 'hdg')
-        poly = gs[i].find('paramPoly3')
-        bU, cU, dU = getData(poly, 'bU'), getData(poly, 'cU'), getData(poly, 'dU')
-        bV, cV, dV = getData(poly, 'bV'), getData(poly, 'cV'), getData(poly, 'dV')
-        t = self.getT([bU, cU, dU, bV, cV, dV], pos-s0)
-        du_dt = bU+2*cU*t+3*dU*t**2
-        dv_dt = bV+2*cV*t+3*dV*t**2
-        deltaH = math.atan2(dv_dt, du_dt)
-        return (deltaH+getData(gs[i], 'hdg'))%(2*math.pi)
-    return 0
 
   # PRIVATE FUNCTION
 

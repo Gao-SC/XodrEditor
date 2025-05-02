@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 from editor.editor import editor
 
-from Xodr.xodrParser import XParser
+from xodrs.xodrParser import XParser
 
 class editorSignal(editor):
   def __init__(self):

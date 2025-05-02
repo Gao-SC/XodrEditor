@@ -1,9 +1,9 @@
 import heapq
 from collections import defaultdict
 
-from Xodr.xodrParser import XParser
-from Xodr.xodrDataGetter import dataGetter
-from Json.jsonParser import JParser
+from xodrs.xodrParser import XParser
+from xodrs.xodrDataGetter import dataGetter
+from jsons.jsonParser import JParser
 
 from utils.lambdas import *
 
@@ -55,8 +55,8 @@ class vehicleDetector:
       length = getData(road, 'length')
       section = road.find('lanes').find('laneSection')
       
-      lws0, rws0 = dataGetter.getLanesWidth(road, 0)
-      lws1, rws1 = dataGetter.getLanesWidth(road, length)
+      lws0, rws0 = dataGetter.getPosWidths(road, 0)
+      lws1, rws1 = dataGetter.getPosWidths(road, length)
 
       for lane in section.findall('.//lane'):
         lid = lane.get('id')
@@ -70,7 +70,7 @@ class vehicleDetector:
           graph[headNode][tailNode] = length
         ## 变道
         for otherLane in section.findall('.//lane'):
-          otherLid = lane.get('id')
+          otherLid = otherLane.get('id')
           if otherLid == "0" or otherLid == lid or int(otherLid)*int(lid) < 0:
             continue
           otherTailNode = f"road_{id}_lane_{otherLid}_0"

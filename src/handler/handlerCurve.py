@@ -1,9 +1,10 @@
 from handler.handler import handler
 from editor.editorCurve import editorCurve
 from editor.editorFit import editorFit
-from Xodr.xodrParser import XParser
-from Json.jsonParser import JParser
+from xodrs.xodrParser import XParser
+from jsons.jsonParser import JParser
 from utils.random import *
+from error.errors import *
 
 class handlerCurve(handler):
   def __init__(self):
@@ -14,7 +15,6 @@ class handlerCurve(handler):
   def handle(self, command):
     XParser.pushNewData()
     JParser.pushNewData()
-    id = "random"
     gi = "random"
     x0, y0, h0, v0 = 0, 0, 0, 0
     x1, y1, h1, v1 = 0, 0, 0, 0
@@ -35,10 +35,17 @@ class handlerCurve(handler):
           if param[1] != 'random':  gi = int(param[1])
         case _: print("Illegal parameter!")
 
+    if 'id' not in locals():
+      print("Id not given!")
+      return "Id not given!"
+    
+    returnString = f"curve id={id} gi={gi} x0={x0} y0={y0} h0={h0} v0={v0} x1={x1} y1={y1} h1={h1} v1={v1}" 
     if gi == "random":
       id, lenGs = self.editorF.edit(id=id, md=0.01, st=1.0)
       gi = getRandomInt(lenGs)
-      self.editorC.edit(id=id, x0=x0, y0=y0, h0=h0, v0=v0, x1=x1, y1=y1, h1=h1, v1=v1, gi=gi)
+      self.editorC.edit(id=id, gi=gi, x0=x0, y0=y0, h0=h0, v0=v0, x1=x1, y1=y1, h1=h1, v1=v1)
+      return "fit"+returnString
+    return returnString
 
 handlerC = handlerCurve()
 

@@ -1,7 +1,7 @@
 from handler.handler import handler
 from editor.editorWidth import editorWidth
-from Xodr.xodrParser import XParser
-from Json.jsonParser import JParser
+from xodrs.xodrParser import XParser
+from jsons.jsonParser import JParser
 from utils.random import *
 
 class handlerWidth(handler):
@@ -12,7 +12,6 @@ class handlerWidth(handler):
   def handle(self, command):
     XParser.pushNewData()
     JParser.pushNewData()
-    id = "random"
     v = 0
     s = 0
     ms = 0
@@ -32,6 +31,10 @@ class handlerWidth(handler):
             li.append(lane)
         case _: print("Illegal parameter!")
 
+    if 'id' not in locals():
+      print("Id not given!")
+      return "Id not given!"
     self.editorW.edit(id=id, value=v, smooth=s, maxStep=ms, sameHdg=sh, laneIds=li)
+    return f"slope id={id} v={v} s={s} ms={ms} sh={sh} li={li}" 
 
 handlerW = handlerWidth()

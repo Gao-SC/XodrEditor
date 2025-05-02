@@ -1,7 +1,8 @@
 import math
 
 from utils.lambdas import *
-from Json.jsonParser import JParser
+from jsons.jsonParser import JParser
+from xodrs.xodrDataGetter import dataGetter
 
 class editor(object):
   def __init__(self):
@@ -42,8 +43,7 @@ class editor(object):
             hdg  = getData(gs[i], 'hdg')
             x, y = getData(gs[i], 'x'), getData(gs[i], 'y')
             poly = gs[i].find('paramPoly3')
-            bU, cU, dU = getData(poly, 'bU'), getData(poly, 'cU'), getData(poly, 'dU')
-            bV, cV, dV = getData(poly, 'bV'), getData(poly, 'cV'), getData(poly, 'dV')
+            bU, cU, dU, bV, cV, dV = dataGetter.getPoly3Params(poly)
             t = carInfo["pos"]-s0
             u = bU*t+cU*t**2+dU*t**3
             v = bV*t+cV*t**2+dV*t**3

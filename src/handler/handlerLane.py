@@ -1,7 +1,7 @@
 from handler.handler import handler
 from editor.editorLane import editorLane
-from Xodr.xodrParser import XParser
-from Json.jsonParser import JParser
+from xodrs.xodrParser import XParser
+from jsons.jsonParser import JParser
 from utils.random import *
 
 from collections import defaultdict
@@ -14,16 +14,15 @@ class handlerLane(handler):
   def handle(self, command):
     XParser.pushNewData()
     JParser.pushNewData()
-    id = "random"
     li = "random"
-    infoMap = defaultdict(dict)
-    infoMap["type"]         = "driving"
-    infoMap["level"]        = "false"
-    infoMap["MsOffset"]	 	  = "0"
-    infoMap['Mtype'] 			  = "solid"
-    infoMap['Mweight'] 		  = "standard"
-    infoMap['Mcolor'] 			= "standard"
-    infoMap['MlaneChange']  = "none"
+    info = defaultdict(dict)
+    info["type"]        = "driving"
+    info["level"]       = "false"
+    info["MsOffset"]	 	= "0"
+    info['Mtype'] 			= "solid"
+    info['Mweight'] 		= "standard"
+    info['Mcolor'] 			= "standard"
+    info['MlaneChange'] = "none"
 
     for i in range(1, len(command)):
       param = command[i].split('=')
@@ -34,8 +33,12 @@ class handlerLane(handler):
           xList = param[1].split(',')
           for x in xList:
             nameValue = x.split(':')
-            infoMap[nameValue[0]] = nameValue[1]
+            info[nameValue[0]] = nameValue[1]
 
-    self.editorM.edit(id=id, laneId=li, infoMap=infoMap)
+    if 'id' not in locals():
+      print("Id not given!")
+      return "Id not given!"
+    self.editorM.edit(id=id, laneId=li, infoMap=info)
+    return f"lane id={id} li={li} info={info}" 
 
 handlerL = handlerLane()

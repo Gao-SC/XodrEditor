@@ -3,8 +3,8 @@ import copy
 import math
 
 from editor.editor import editor
-from Xodr.xodrParser import XParser
-from Json.jsonParser import JParser
+from xodrs.xodrParser import XParser
+from jsons.jsonParser import JParser
 
 from utils.definitions import *
 from utils.lambdas import *

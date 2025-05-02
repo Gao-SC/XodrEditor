@@ -2,12 +2,10 @@ import xml.etree.ElementTree as ET
 import math
 
 from editor.editor import editor
-from Xodr.xodrParser import XParser
-from Xodr.xodrDataGetter import dataGetter
-from Json.carDetector import detector
+from xodrs.xodrParser import XParser
+from xodrs.xodrDataGetter import dataGetter
 
 from utils.lambdas import *
-from utils.calculator import bezierToPoly3
 from utils.pltShow import showCurve
 
 class editorCurve(editor):
@@ -31,6 +29,7 @@ class editorCurve(editor):
     edit1 = x1 != 0 or y1 != 0 or h1 != 0
     B = self.getGBezier(gs[gi])
     euc_dis = math.sqrt(B[0]**2+B[1]**2)
+    
     for i in range(len(gs)):
       bezier = self.getGBezier(gs[i])
       judge = i == gi-1 and edit0 or i == gi or i == gi+1 and edit1
@@ -56,8 +55,8 @@ class editorCurve(editor):
 
       x = getData(gs[i], 'x')+deltaX
       y = getData(gs[i], 'y')+deltaY
-      param = bezierToPoly3(bezier)
-      l = XParser.getLength(param, 1)
+      param = dataGetter.bezierToPoly3(bezier)
+      l = dataGetter.poly3ToLength(param, 1)
       param.append(x-getData(gs[0], 'x'))
       param.append(y-getData(gs[0], 'y'))
       params.append(param)
@@ -79,6 +78,12 @@ class editorCurve(editor):
         setData(poly, 'cV', param[4])
         setData(poly, 'dV', param[5])
         gs[i].append(poly)
+
+        if i == 0:
+          XParser.hdgs[id][0] = bezier[4]
+        elif i == len(gs)-1:
+          XParser.hdgs[id][1] = bezier[5]
+
       elif i >= gi+1:
         setData(gs[i], 's', lengthNew)
       lengthNew += l

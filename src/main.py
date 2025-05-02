@@ -1,8 +1,8 @@
 
 import utils.path as path
 
-from Xodr.xodrParser 				import XParser
-from Json.jsonParser 				import JParser
+from xodrs.xodrParser 			import XParser
+from jsons.jsonParser 			import JParser
 from llm.llm 								import chater
 from handler.handlerCurve 	import handlerC
 from handler.handlerFit 		import handlerF
@@ -39,6 +39,7 @@ if __name__ == '__main__':
 			print("The json file is not exist.")
 		path.editSaveName(fileName)
 		logger = Logger()
+		logger.write(fileName)
 
 		while True:
 			command = None
@@ -68,28 +69,22 @@ if __name__ == '__main__':
 					print("Save name is now: ", path.saveName)
 
 				case "curve":
-					handlerC.handle(command)
-					# logger.write(command)
+					logger.write(handlerC.handle(command))
 
 				case "fit":
-					handlerF.handle(command)
-					# logger.write(command)
+					logger.write(handlerF.handle(command))
 
-				case "mark":
-					handlerL.handle(command)
-					# logger.write(command)
+				case "lane":
+					logger.write(handlerL.handle(command))
 
 				case "signal":
-					handlerSi.handle(command)
-					# logger.write(command)
+					logger.write(handlerSi.handle(command))
 		
 				case "slope":
-					handlerSl.handle(command)
-					# logger.write(command)
+					logger.write(handlerSl.handle(command))
 
 				case "width":
-					handlerW.handle(command)
-					# logger.write(command)
+					logger.write(handlerW.handle(command))
 
 				case _:
 					print("Illegal command!")

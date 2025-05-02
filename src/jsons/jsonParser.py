@@ -5,11 +5,12 @@ import copy
 import math
 import json
 
-from Xodr.xodrParser import XParser
-from Xodr.xodrDataGetter import dataGetter
+from xodrs.xodrParser import XParser
+from xodrs.xodrDataGetter import dataGetter
 
 import utils.path as path
 from utils.lambdas import *
+
 class jsonParser:
   def __init__(self):
     self.jsonData = deque()
@@ -46,7 +47,7 @@ class jsonParser:
     print("FINDING THE POSITION OF CARS...")
     self.clearAll()
     try:
-      with open(path.openPath+name+".json", 'r') as file:
+      with open(path.readPath+name+".json", 'r') as file:
         # 初始化
         self.addData(json.load(file))
         self.updateCarData()
@@ -104,7 +105,7 @@ class jsonParser:
     self.addCarData(carInfos)
 
   def writeJson(self):
-    with open(path.openPath+path.saveName+"_test.json", 'w') as file:
+    with open(path.savePath+path.saveName+"_test.json", 'w') as file:
       json.dump(self.jsonData[-1], file, indent=4)
       file.write('\n')
 
@@ -131,20 +132,26 @@ class jsonParser:
       ans, ansL = self.projectPoint(road, pos['x'], pos['z'])
       if ans == float('inf'):
         continue
-      lws, rws = dataGetter.getLanesWidth(road, ansL)
+
+      lws, rws = dataGetter.getPosWidths(road, ansL)
+      hdg = dataGetter.getPosHdg(road, ansL)
+      if ans < 0: hdg = (hdg+math.pi)%(2*math.pi)
+      carHdg = (rot['y']/180*math.pi)%(2*math.pi)
+      deltaHdg = min(2*math.pi-abs(hdg-carHdg), abs(hdg-carHdg))
     
       if ans <= 0: #道路左侧
         for i in range(len(lws)):
           if ans > lws[i]:
-            candidateRoads.append([id, str(i+1),  ansL, ans])
+            candidateRoads.append([id, str(i+1),  ansL, ans, deltaHdg])
             break
       else:
         for i in range(len(rws)):
           if ans < rws[i]:
-            candidateRoads.append([id, str(-i-1), ansL, ans])
+            candidateRoads.append([id, str(-i-1), ansL, ans, deltaHdg])
             break
+
     if candidateRoads:
-      candidateRoads.sort(key=lambda x: abs(x[3]))
+      candidateRoads.sort(key=lambda x: abs(x[3])+x[4])
       return candidateRoads[0]
     else:
       return None
@@ -244,7 +251,7 @@ class jsonParser:
             dis = math.hypot(x_t-tarX, y_t-tarY)
             if dx_dt*(tarY-y_t) > dy_dt*(tarX-x_t):
               dis *= -1
-        pos = XParser.getLength([bU, cU, dU, bV, cV, dV], T)
+        pos = dataGetter.poly3ToLength([bU, cU, dU, bV, cV, dV], T)
 
       if abs(ans) > abs(dis):
         ans = dis
