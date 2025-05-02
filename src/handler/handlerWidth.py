@@ -1,4 +1,4 @@
-from command.handler import handler
+from handler.handler import handler
 from editor.editorWidth import editorWidth
 from Xodr.xodrParser import XParser
 from Json.jsonParser import JParser
@@ -12,6 +12,7 @@ class handlerWidth(handler):
   def handle(self, command):
     XParser.pushNewData()
     JParser.pushNewData()
+    id = "random"
     v = 0
     s = 0
     ms = 0

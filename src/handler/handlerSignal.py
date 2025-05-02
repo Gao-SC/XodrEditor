@@ -1,4 +1,4 @@
-from command.handler import handler
+from handler.handler import handler
 from editor.editorSignal import editorSignal
 from Xodr.xodrParser import XParser
 from Json.jsonParser import JParser
@@ -15,6 +15,7 @@ class handlerSignal(handler):
     XParser.pushNewData()
     JParser.pushNewData()
     infoMap = defaultdict(dict)
+    id = "random"
     infoMap["s"]	 	            = "0"
     infoMap['t'] 			          = "0"
     infoMap['id'] 		          = None

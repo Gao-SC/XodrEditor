@@ -1,4 +1,4 @@
-from command.handler import handler
+from handler.handler import handler
 from editor.editorFit import editorFit
 from Xodr.xodrParser import XParser
 from Json.jsonParser import JParser
@@ -12,6 +12,7 @@ class handlerFit(handler):
   def handle(self, command):
     XParser.pushNewData()
     JParser.pushNewData()
+    id = "random"
     md = 0.01
     st = 1.0
     for i in range(1, len(command)):

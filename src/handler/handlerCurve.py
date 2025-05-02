@@ -1,4 +1,4 @@
-from command.handler import handler
+from handler.handler import handler
 from editor.editorCurve import editorCurve
 from editor.editorFit import editorFit
 from Xodr.xodrParser import XParser
@@ -14,9 +14,11 @@ class handlerCurve(handler):
   def handle(self, command):
     XParser.pushNewData()
     JParser.pushNewData()
+    id = "random"
+    gi = "random"
     x0, y0, h0, v0 = 0, 0, 0, 0
     x1, y1, h1, v1 = 0, 0, 0, 0
-    gi = "random"
+    
     for i in range(1, len(command)):
       param = command[i].split('=')
       match param[0]:

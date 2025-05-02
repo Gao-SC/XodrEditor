@@ -1,9 +1,14 @@
 import xml.etree.ElementTree as ET
 import copy
+import math
+import numpy
+
 from scipy.optimize import root_scalar
+from scipy.integrate import quad
 from collections import deque, defaultdict
 
-from utils.constants import *
+from utils.definitions import *
+from utils.lambdas import *
 import utils.path as path
 
 class xodrParser:
@@ -33,13 +38,13 @@ class xodrParser:
     self.root = new_val
 
   def writeXodr(self):
-    self.data[-1].write(path.PATH+path.saveName+"_test.xodr", encoding="utf-8", xml_declaration=True)
+    self.data[-1].write(path.openPath+path.saveName+"_test.xodr", encoding="utf-8", xml_declaration=True)
     print('Already saved.')
 
   def openXodr(self, name):
     tree = None 
     try:
-      tree = ET.parse(path.PATH+name+".xodr")
+      tree = ET.parse(path.openPath+name+".xodr")
     except Exception:
       print("File not found!")
       return False
@@ -58,22 +63,22 @@ class xodrParser:
       self.hdgUpdate(road.findall('.//geometry'), id)
 
       self.roadConnections[id] = [[], []]
-      self.roadBackup[id] = cons.NOT_EDITED
+      self.roadBackup[id] = defs.NOT_EDITED
       self.laneConnections[id] = {}
       self.laneBackup[id] = {}
       tmpJSets[id] = [-1, -1]
       for lane in road.findall('.//lane'):
         lid = lane.get('id')
         if lid != '0':
-          self.laneBackup[id][lid] = cons.NOT_EDITED
+          self.laneBackup[id][lid] = defs.NOT_EDITED
           self.laneConnections[id][lid] = [[], []]
 
     for road in self.root.iter('road'):
       id = road.get('id')
       link = road.find('link')
       lanes = road.findall('.//lane')
-      self.roadUpdate(id, link, lanes, tmpJSets, cons.TAIL)
-      self.roadUpdate(id, link, lanes, tmpJSets, cons.HEAD)
+      self.roadUpdate(id, link, lanes, tmpJSets, defs.TAIL)
+      self.roadUpdate(id, link, lanes, tmpJSets, defs.HEAD)
         
     for junction in self.root.iter('junction'):
       id = junction.get('id')
@@ -148,7 +153,7 @@ class xodrParser:
 
   def roadUpdate(self, id, link, lanes, tmpJSets, dir):
     p_s = link.find('predecessor')
-    if dir == cons.HEAD:
+    if dir == defs.HEAD:
       p_s = link.find('successor')
     
     if p_s != None:
@@ -163,7 +168,7 @@ class xodrParser:
           lid = lane.get('id')
           llink = lane.find('link')
           lp_s = llink.find('predecessor')
-          if dir == cons.HEAD:
+          if dir == defs.HEAD:
             lp_s = llink.find('successor')
 
           if lp_s != None:

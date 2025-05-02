@@ -4,12 +4,13 @@ import utils.path as path
 from Xodr.xodrParser 				import XParser
 from Json.jsonParser 				import JParser
 from llm.llm 								import chater
-from command.handlerCurve 	import handlerC
-from command.handlerFit 		import handlerF
-from command.handlerLane 		import handlerL
-from command.handlerSignal	import handlerSi
-from command.handlerSlope 	import handlerSl
-from command.handlerWidth 	import handlerW
+from handler.handlerCurve 	import handlerC
+from handler.handlerFit 		import handlerF
+from handler.handlerLane 		import handlerL
+from handler.handlerSignal	import handlerSi
+from handler.handlerSlope 	import handlerSl
+from handler.handlerWidth 	import handlerW
+from log.logger 						import Logger
 
 import matplotlib.pyplot as plt
 
@@ -37,6 +38,7 @@ if __name__ == '__main__':
 		if JParser.readJson(fileName) == False:
 			print("The json file is not exist.")
 		path.editSaveName(fileName)
+		logger = Logger()
 
 		while True:
 			command = None
@@ -67,21 +69,27 @@ if __name__ == '__main__':
 
 				case "curve":
 					handlerC.handle(command)
+					# logger.write(command)
 
 				case "fit":
 					handlerF.handle(command)
+					# logger.write(command)
 
 				case "mark":
 					handlerL.handle(command)
+					# logger.write(command)
 
 				case "signal":
 					handlerSi.handle(command)
+					# logger.write(command)
 		
 				case "slope":
 					handlerSl.handle(command)
+					# logger.write(command)
 
 				case "width":
 					handlerW.handle(command)
+					# logger.write(command)
 
 				case _:
 					print("Illegal command!")

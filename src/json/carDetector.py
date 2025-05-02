@@ -4,7 +4,8 @@ from collections import defaultdict
 from Xodr.xodrParser import XParser
 from Xodr.xodrDataGetter import dataGetter
 from Json.jsonParser import JParser
-from utils.constants import *
+
+from utils.lambdas import *
 
 import random
 class vehicleDetector:
@@ -12,35 +13,41 @@ class vehicleDetector:
     self.candidateRoads = []
     self.candidateLanes = []
 
-  def setCandidates(self):
-    graph = self.buildGRAPH()
-    self.rectifyGraph(graph)
-
-    # 运行Dijkstra
-    paths = []
-    for i in range(len(JParser.egoTs)):
-      x = self.dijkstra(graph, f"start_{i}", f"end_{i}")
-      paths.extend(x)
-
+  def setCandidates(self, ego=True, npc=False):
     self.candidateRoads.clear()
     self.candidateLanes.clear()
-    
-    for cost, path in paths:
-      for node in path:
-        id, lid = "", ""
-        data = node.split('_')
-        if data[0] == "start":
-          egoT = JParser.egoTs[int(data[1])]
-          id, lid = egoT[0], egoT[1]
-        elif data[0] == "end":
-          egoD = JParser.egoDs[int(data[1])]
-          id, lid = egoD[0], egoD[1]
-        else:
-          id, lid = data[1], data[3]
-        if id not in self.candidateRoads:
-          self.candidateRoads.append(id)
-        if [id, lid] not in self.candidateLanes:
-          self.candidateLanes.append([id, lid])
+
+    if ego: # 考虑ego车的途径点
+      graph = self.buildGRAPH()
+      self.rectifyGraph(graph)
+
+      # 寻找潜在的ego路径
+      paths = []
+      for i in range(len(JParser.egoTs)):
+        x = self.dijkstra(graph, f"start_{i}", f"end_{i}")
+        paths.extend(x)
+
+      for cost, path in paths:
+        for node in path:
+          id, lid = "", ""
+          data = node.split('_')
+          if data[0] == "start":
+            egoT = JParser.egoTs[int(data[1])]
+            id, lid = egoT[0], egoT[1]
+          elif data[0] == "end":
+            egoD = JParser.egoDs[int(data[1])]
+            id, lid = egoD[0], egoD[1]
+          else:
+            id, lid = data[1], data[3]
+          if id not in self.candidateRoads:
+            self.candidateRoads.append(id)
+          if [id, lid] not in self.candidateLanes:
+            self.candidateLanes.append([id, lid])
+
+    if npc: # 考虑npc车的途径点
+      pass
+      # TODO
+
 
   def buildGRAPH(self):
     graph = defaultdict(dict)

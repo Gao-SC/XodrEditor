@@ -1,4 +1,4 @@
-from command.handler import handler
+from handler.handler import handler
 from editor.editorLane import editorLane
 from Xodr.xodrParser import XParser
 from Json.jsonParser import JParser
@@ -14,6 +14,7 @@ class handlerLane(handler):
   def handle(self, command):
     XParser.pushNewData()
     JParser.pushNewData()
+    id = "random"
     li = "random"
     infoMap = defaultdict(dict)
     infoMap["type"]         = "driving"

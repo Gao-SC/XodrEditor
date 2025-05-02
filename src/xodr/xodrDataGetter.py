@@ -1,4 +1,4 @@
-from utils.constants import *
+from utils.lambdas import *
 
 class xodrDataGetter:
   def __init__(self):

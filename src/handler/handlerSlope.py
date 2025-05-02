@@ -1,4 +1,4 @@
-from command.handler import handler
+from handler.handler import handler
 from editor.editorSlope import editorSlope
 from Xodr.xodrParser import XParser
 from Json.jsonParser import JParser
@@ -12,6 +12,7 @@ class handlerSlope(handler):
   def handle(self, command):
     XParser.pushNewData()
     JParser.pushNewData()
+    id = "random"
     v = 0
     m = 'mul'
     mv = 0

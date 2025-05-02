@@ -2,6 +2,7 @@ saveName = None
 
 openPath = ".\\test\\input\\"
 savePath = ".\\test\\output\\"
+logPath = ".\\log\\"
 
 def editSaveName(newName):
   global saveName

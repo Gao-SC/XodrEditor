@@ -5,10 +5,11 @@ import copy
 import math
 import json
 
-import utils.path as path
 from Xodr.xodrParser import XParser
 from Xodr.xodrDataGetter import dataGetter
-from utils.constants import *
+
+import utils.path as path
+from utils.lambdas import *
 class jsonParser:
   def __init__(self):
     self.jsonData = deque()
@@ -42,10 +43,10 @@ class jsonParser:
     self.addCarData(self.carPosition[-1])
 
   def readJson(self, name):
-    print("FINDING THE TARGET ROADS...")
+    print("FINDING THE POSITION OF CARS...")
     self.clearAll()
     try:
-      with open(path.PATH+name+".json", 'r') as file:
+      with open(path.openPath+name+".json", 'r') as file:
         # 初始化
         self.addData(json.load(file))
         self.updateCarData()
@@ -98,13 +99,12 @@ class jsonParser:
             carInfos[point[0]][point[1]].append({"carId": i, "ordId": j+1, "pos": point[2], "dis": point[3]})
           else:
             print("Not found: ", i, " ", j+1)
-      print("Done: ", i)
 
-    print("Done")
+    print("FINDING ENDED.")
     self.addCarData(carInfos)
 
   def writeJson(self):
-    with open(path.PATH+path.saveName+"_test.json", 'w') as file:
+    with open(path.openPath+path.saveName+"_test.json", 'w') as file:
       json.dump(self.jsonData[-1], file, indent=4)
       file.write('\n')
 
@@ -124,7 +124,7 @@ class jsonParser:
         return car['waypoints'][ordId-1]
 
   ## PRIVATE METHOD
-
+  ## TODO 车朝向问题
   def findRoad(self, pos, rot):
     candidateRoads = []
     for id, road in XParser.roads.items():
