@@ -32,27 +32,31 @@ def getRandomValue(string):
 def getRandomInt(num):
   return random.randrange(0, num)
 
-def getRandomId1(id):
-  try:
-    value = int(id)
-    return id
-  except ValueError:
-    if id == "random":
-      detector.setCandidates()
-      return detector.getRandomId1()
-    else:
-      print("Invalid id! Choose default 0.")
-      return "0"
+def getRandomId(id, lane=False):
+  ego, npc = 1, 0
+  idList = id.split('_')
 
-def getRandomId2(id):
   try:
-    value = int(id)
-    return id, []
+    value = int(idList[0])
+    if lane: 
+      return idList[0], []
+    return idList[0]
+  
   except ValueError:
-    if id == "random":
-      detector.setCandidates()
-      id, lid = detector.getRandomId2()
-      return id, [lid]
+    if idList[0] == "random":
+      try:
+        ego, npc = int(idList[1]), int(idList[2])  
+      except Exception:
+        pass
+  
+      detector.setCandidates(ego, npc)
+      if lane: 
+        rid, lid = detector.getRandomId2()
+        return rid, [lid]
+      return detector.getRandomId1()
+    
     else:
       print("Invalid id! Choose default 0.")
-      return "0", []
+      if lane: 
+        return "0", ["0"]
+      return "0"

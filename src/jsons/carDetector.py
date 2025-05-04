@@ -13,18 +13,18 @@ class vehicleDetector:
     self.candidateRoads = []
     self.candidateLanes = []
 
-  def setCandidates(self, ego=True, npc=False):
+  def setCandidates(self, ego, npc):
     self.candidateRoads.clear()
     self.candidateLanes.clear()
 
-    if ego: # 考虑ego车的途径点
+    if ego > 0: # 考虑ego车的途径点
       graph = self.buildGRAPH()
       self.rectifyGraph(graph)
 
       # 寻找潜在的ego路径
       paths = []
       for i in range(len(JParser.egoTs)):
-        x = self.dijkstra(graph, f"start_{i}", f"end_{i}")
+        x = self.dijkstra(graph, f"start_{i}", f"end_{i}", k=ego)
         paths.extend(x)
 
       for cost, path in paths:
@@ -44,16 +44,24 @@ class vehicleDetector:
           if [id, lid] not in self.candidateLanes:
             self.candidateLanes.append([id, lid])
 
-    if npc: # 考虑npc车的途径点
-      pass
-      # TODO
-
+    if npc > 0: # 考虑npc车的途径点
+      for id, roadInfo in JParser.carPosition[-1].items():
+        if not roadInfo:
+          continue
+        if id not in self.candidateRoads:
+          self.candidateRoads.append(id)
+        for lid, laneInfo in roadInfo.items():
+          if not laneInfo:
+            continue
+          if [id, lid]  not in self.candidateRoads:
+            self.candidateLanes.append([id, lid])
 
   def buildGRAPH(self):
     graph = defaultdict(dict)
     for id, road in XParser.roads.items():
       length = getData(road, 'length')
       section = road.find('lanes').find('laneSection')
+      LHT = road.find('rule') == "LHT"
       
       lws0, rws0 = dataGetter.getPosWidths(road, 0)
       lws1, rws1 = dataGetter.getPosWidths(road, length)
@@ -64,7 +72,8 @@ class vehicleDetector:
           continue
         tailNode = f"road_{id}_lane_{lid}_0"
         headNode = f"road_{id}_lane_{lid}_1"
-        if int(lid) < 0: # 右侧车道
+        ## 道路上行驶
+        if int(lid) < 0 ^ LHT: # 右侧车道向前行驶
           graph[tailNode][headNode] = length
         else:
           graph[headNode][tailNode] = length
@@ -82,10 +91,11 @@ class vehicleDetector:
             graph[tailNode][otherTailNode] = abs(lws0[ int(lid)]-lws0[ int(otherLid)])
             graph[headNode][otherHeadNode] = abs(lws1[ int(lid)]-lws1[ int(otherLid)])
       
-        
+    ## 道路连接
     for id, item in XParser.laneConnections.items():
       for lid, item_ in item.items():
-        if int(lid) < 0: #右侧车道
+        #这里
+        if int(lid) < 0 ^ LHT: # 右侧车道向前行驶
           node = f"road_{id}_lane_{lid}_1"
           for target in item_[1]:
             targetNode = f"road_{target[0]}_lane_{target[1]}_{target[2]}"

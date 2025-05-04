@@ -1,34 +1,27 @@
 from handler.handler import handler
-from editor.editorLane import editorLane
+from editor.editorObject import editorObject
 from xodrs.xodrParser import XParser
 from jsons.jsonParser import JParser
 from utils.random import *
 
 from collections import defaultdict
 
-class handlerLane(handler):
+class handlerObject(handler):
   def __init__(self):
     handler.__init__(self)
-    self.editorM = editorLane()
+    self.editorO = editorObject()
 
   def handle(self, command):
     XParser.pushNewData()
     JParser.pushNewData()
-    li = "random"
     info = defaultdict(dict)
-    info["type"]        = "driving"
-    info["level"]       = "false"
-    info["MsOffset"]	 	= "0"
-    info['Mtype'] 			= "solid"
-    info['Mweight'] 		= "standard"
-    info['Mcolor'] 			= "standard"
-    info['MlaneChange'] = "none"
 
     for i in range(1, len(command)):
       param = command[i].split('=')
       match param[0]:
         case 'id': id = getRandomId(param[1])
-        case 'li': li = param[1]
+        case 'si': oi = int(param[1])
+        case 'name': name = param[1]
         case 'info': 
           xList = param[1].split(',')
           for x in xList:
@@ -37,8 +30,15 @@ class handlerLane(handler):
 
     if 'id' not in locals():
       print("Id not given!")
-      return "Id not given!"
-    self.editorM.edit(id=id, laneId=li, infoMap=info)
-    return f"lane id={id} li={li} info={info}" 
+      return "Object id not given!"
+    if 'si' not in locals():
+      print("Si not given!")
+      return "Object si not given!"
+    if 'name' not in locals():
+      print("Name not given!")
+      return "Object name not given!"
+      
+    self.editorO.edit(id=id, objectId=oi, name=name, infoMap=info)
+    return f"object id={id} si={oi} name={name} info={info}" 
 
-handlerL = handlerLane()
+handlerO = handlerObject()

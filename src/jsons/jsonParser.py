@@ -135,7 +135,8 @@ class jsonParser:
 
       lws, rws = dataGetter.getPosWidths(road, ansL)
       hdg = dataGetter.getPosHdg(road, ansL)
-      if ans < 0: hdg = (hdg+math.pi)%(2*math.pi)
+      LHT = road.find('rule') == "LHT"
+      if ans < 0 ^ LHT: hdg = (hdg+math.pi)%(2*math.pi)
       carHdg = (rot['y']/180*math.pi)%(2*math.pi)
       deltaHdg = min(2*math.pi-abs(hdg-carHdg), abs(hdg-carHdg))
     

@@ -20,7 +20,7 @@ class editorSignal(editor):
         signals.remove(signal)
         return
     else:
-      signal = ET.Element("roadMark")
+      signal = ET.Element("signal")
       signals.append(signal)
 
     attributes = [

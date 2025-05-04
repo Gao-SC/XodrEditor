@@ -34,7 +34,7 @@ class handlerSignal(handler):
     for i in range(1, len(command)):
       param = command[i].split('=')
       match param[0]:
-        case 'id': id = getRandomId1(param[1])
+        case 'id': id = getRandomId(param[1])
         case 'si': si = int(param[1])
         case 'info': 
           xList = param[1].split(',')
