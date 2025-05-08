@@ -1,7 +1,7 @@
 saveName = None
 
-readPath = ".\\test\\input\\"
-savePath = ".\\test\\output\\"
+readPath = ".\\data\\input\\"
+savePath = ".\\data\\output\\"
 scriptPath = ".\\script\\"
 
 def editSaveName(newName):

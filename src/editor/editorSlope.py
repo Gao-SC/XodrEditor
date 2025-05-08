@@ -39,8 +39,7 @@ class editorSlope(editor):
     
     value = value if mode != 'mul' else value*getData(road, 'length')
     self.setRoadSlope(id, value, move)
-    for r in XParser.root.iter('road'):
-      newId = r.get('id')
+    for newId in XParser.roads.keys():
       num = XParser.roadEdits[newId]
       if num == defs.TAIL_EDITED or num == defs.TAIL_EDITED2:   # change tail
         self.setRoadSlope(newId, value, defs.MOVE_TAIL)

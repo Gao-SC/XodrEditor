@@ -12,7 +12,7 @@ from handler.handlerObject 	import handlerO
 from handler.handlerSignal	import handlerSi
 from handler.handlerSlope 	import handlerSl
 from handler.handlerWidth 	import handlerW
-from log.logger 						import Logger
+from logger.logger 					import Logger
 
 import matplotlib.pyplot as plt
 
@@ -22,21 +22,18 @@ if __name__ == '__main__':
 
 	while True:
 		if commandList == []:
-			mode = input("Please choose the mode of interaction. \
-				Input 'C' for command line interaction. \
-				Input 'S' for reading command script. \
-				Input 'L' for asking the large language model. \
-				Input 'E' for exiting.")
+			mode = input("Please choose the mode of interaction.\nInput 'C' for command line interaction.\nInput 'S' for reading command script.\nInput 'L' for asking the large language model.\nInput 'E' to exit.\n")
 			
 			if mode == 'S':
 				commandList = script.read()
-
 			elif mode == 'L':
 				commandList = chater.translate()
-			
 			elif mode == 'E':
 				plt.ioff()
 				break
+			elif mode != 'C':
+				print("WRONG MODE!")
+				continue
 		
 		if commandList != []:
 			fileName = commandList[0]

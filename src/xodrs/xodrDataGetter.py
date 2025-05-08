@@ -41,9 +41,6 @@ class xodrDataGetter:
 
     for lane in lanes:
       id = getData(lane, 'id')
-      if id == 0:
-        continue
-
       widths = lane.findall('width')
       for i in range(len(widths)):
         s0 = getData(widths[i], 'sOffset')

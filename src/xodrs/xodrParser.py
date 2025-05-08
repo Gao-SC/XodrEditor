@@ -28,31 +28,25 @@ class xodrParser:
   def redoData(self):
     if len(self.data) > 1:
       self.data.pop()
-  def clearData(self):
-    self.data.clear()
-
-  def updateRoot(self, new_val):
-    self.root = new_val
 
   def writeXodr(self):
     self.data[-1].write(path.savePath+path.saveName+"_test.xodr", encoding="utf-8", xml_declaration=True)
     print('Already saved.')
 
   def openXodr(self, name):
-    tree = None 
+    elementTree = None 
     try:
-      tree = ET.parse(path.readPath+name+".xodr")
+      elementTree = ET.parse(path.readPath+name+".xodr")
     except Exception:
       print("File not found!")
       return False
-    self.clearData()
-    self.addData(tree)
-    self.updateRoot(self.data[-1].getroot())
+    self.clearAll()
+    self.addData(elementTree)
+    self.root = self.data[-1].getroot()
     self.updateData()
     return True
 
   def updateData(self):
-    self.clearAll()
     tmpJSets = {}
     for road in self.root.iter('road'):
       id = road.get('id')
@@ -85,7 +79,7 @@ class xodrParser:
   def pushNewData(self):
     self.roads.clear()
     self.addData(self.data[-1])
-    self.updateRoot(self.data[-1].getroot())
+    self.root = self.data[-1].getroot()
     for road in self.root.iter('road'):
       id = road.get('id')
       self.roads[id] = road
@@ -93,6 +87,7 @@ class xodrParser:
   # PRIVATE FUNCTION
 
   def clearAll(self):
+    self.data.clear()
     self.roads.clear()
     self.roadConnections.clear()
     self.laneConnections.clear()

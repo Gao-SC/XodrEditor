@@ -1,6 +1,6 @@
 import random
 
-from jsons.carDetector import detector
+from carDetector.carDetector import detector
 
 def getRandomValue(string):
   valueList = string.split('_')
