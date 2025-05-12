@@ -20,7 +20,7 @@ class handlerObject(handler):
       param = command[i].split('=')
       match param[0]:
         case 'id': id = getRandomId(param[1])
-        case 'si': oi = int(param[1])
+        case 'oi': oi = int(param[1])
         case 'name': name = param[1]
         case 'info': 
           xList = param[1].split(',')
@@ -31,14 +31,14 @@ class handlerObject(handler):
     if 'id' not in locals():
       print("Id not given!")
       return "Object id not given!"
-    if 'si' not in locals():
+    if 'oi' not in locals():
       print("Si not given!")
-      return "Object si not given!"
+      return "Object oi not given!"
     if 'name' not in locals():
       print("Name not given!")
       return "Object name not given!"
       
     self.editorO.edit(id=id, objectId=oi, name=name, infoMap=info)
-    return f"object id={id} si={oi} name={name} info={info}" 
+    return f"object id={id} oi={oi} name={name} info={info}" 
 
 handlerO = handlerObject()

@@ -6,7 +6,7 @@ import math
 import json
 
 from xodrs.xodrParser import XParser
-from xodrs.xodrDataGetter import dataGetter
+from xodrs.xodrDataGetter import xDataGetter
 
 import utils.path as path
 from utils.lambdas import *
@@ -45,20 +45,19 @@ class jsonParser:
 
   def readJson(self, name):
     print("FINDING THE POSITION OF CARS...")
-    self.clearAll()
     try:
       with open(path.readPath+name+".json", 'r') as file:
-        # 初始化
-        self.addData(json.load(file))
-        self.updateCarData()
-        return True
-    
+        jsonData = json.load(file)
     except FileNotFoundError:
       print("Error: File not found!")
       return False
     except json.JSONDecodeError:
       print("Error: Invalid JSON format!")
       return False
+    self.clearAll()
+    self.addData(jsonData)
+    self.updateCarData()
+    return True
 
   def updateCarData(self):
     carInfos = defaultdict(dict)
@@ -109,23 +108,7 @@ class jsonParser:
       json.dump(self.jsonData[-1], file, indent=4)
       file.write('\n')
 
-  def getOrd(self, carInfo):
-    carId = carInfo["carId"]
-    ordId = carInfo["ordId"]
-    car = self.jsonData[-1]["agents"][carId]
-    if car['uid'] != "":
-      if ordId == 0:
-        return car['transform']
-      else:
-        return car['destinationPoint']
-    else:
-      if ordId == 0:
-        return car['transform']
-      else:
-        return car['waypoints'][ordId-1]
-
   ## PRIVATE METHOD
-  ## TODO 车朝向问题
   def findRoad(self, pos, rot):
     candidateRoads = []
     for id, road in XParser.roads.items():
@@ -133,8 +116,8 @@ class jsonParser:
       if ans == float('inf'):
         continue
 
-      lws, rws = dataGetter.getPosWidths(road, ansL)
-      hdg = dataGetter.getPosHdg(road, ansL)
+      lws, rws = xDataGetter.getPosWidths(road, ansL)
+      hdg = xDataGetter.getPosHdg(road, ansL)
       LHT = road.find('rule') == "LHT"
       if ans < 0 ^ LHT: hdg = (hdg+math.pi)%(2*math.pi)
       carHdg = (rot['y']/180*math.pi)%(2*math.pi)
@@ -252,7 +235,7 @@ class jsonParser:
             dis = math.hypot(x_t-tarX, y_t-tarY)
             if dx_dt*(tarY-y_t) > dy_dt*(tarX-x_t):
               dis *= -1
-        pos = dataGetter.poly3ToLength([bU, cU, dU, bV, cV, dV], T)
+        pos = xDataGetter.poly3ToLength([bU, cU, dU, bV, cV, dV], T)
 
       if abs(ans) > abs(dis):
         ans = dis

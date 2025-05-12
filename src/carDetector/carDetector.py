@@ -2,7 +2,7 @@ import heapq
 from collections import defaultdict
 
 from xodrs.xodrParser import XParser
-from xodrs.xodrDataGetter import dataGetter
+from xodrs.xodrDataGetter import xDataGetter
 from jsons.jsonParser import JParser
 
 from utils.lambdas import *
@@ -63,8 +63,8 @@ class vehicleDetector:
       section = road.find('lanes').find('laneSection')
       LHT = road.find('rule') == "LHT"
       
-      lws0, rws0 = dataGetter.getPosWidths(road, 0)
-      lws1, rws1 = dataGetter.getPosWidths(road, length)
+      lws0, rws0 = xDataGetter.getPosWidths(road, 0)
+      lws1, rws1 = xDataGetter.getPosWidths(road, length)
 
       for lane in section.findall('.//lane'):
         lid = lane.get('id')

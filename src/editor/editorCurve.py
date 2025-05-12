@@ -3,7 +3,7 @@ import math
 
 from editor.editor import editor
 from xodrs.xodrParser import XParser
-from xodrs.xodrDataGetter import dataGetter
+from xodrs.xodrDataGetter import xDataGetter
 
 from utils.lambdas import *
 from utils.pltShow import showCurve
@@ -55,8 +55,8 @@ class editorCurve(editor):
 
       x = getData(gs[i], 'x')+deltaX
       y = getData(gs[i], 'y')+deltaY
-      param = dataGetter.bezierToPoly3(bezier)
-      l = dataGetter.poly3ToLength(param, 1)
+      param = xDataGetter.bezierToPoly3(bezier)
+      l = xDataGetter.poly3ToLength(param, 1)
       param.append(x-getData(gs[0], 'x'))
       param.append(y-getData(gs[0], 'y'))
       params.append(param)
@@ -100,7 +100,7 @@ class editorCurve(editor):
       y = getData(g, 'length')*math.sin(h0)
     poly = g.find('paramPoly3')
     if poly != None:
-      bU, cU, dU, bV, cV, dV = dataGetter.getPoly3Params(poly)
+      bU, cU, dU, bV, cV, dV = xDataGetter.getPoly3Params(poly)
       x_, y_ = bU+cU+dU, bV+cV+dV
       x = x_*math.cos(h0)-y_*math.sin(h0)
       y = x_*math.sin(h0)+y_*math.cos(h0)

@@ -5,7 +5,7 @@ import numpy
 
 from scipy.optimize import least_squares
 from xodrs.xodrParser import XParser
-from xodrs.xodrDataGetter import dataGetter
+from xodrs.xodrDataGetter import xDataGetter
 
 from utils.lambdas import *
 from utils.pltShow import showCurve
@@ -25,8 +25,8 @@ class editorFit(editor):
     x, y = getData(gs[0], 'x'), getData(gs[0], 'y')
     params = []
     for i in range(len(beziers)):
-      param = dataGetter.bezierToPoly3(beziers[i])
-      l = dataGetter.poly3ToLength(param, 1)
+      param = xDataGetter.bezierToPoly3(beziers[i])
+      l = xDataGetter.poly3ToLength(param, 1)
       param.append(x-getData(gs[0], 'x'))
       param.append(y-getData(gs[0], 'y'))
       params.append(param)
@@ -77,7 +77,7 @@ class editorFit(editor):
       y_ += getData(g1, 'length')*math.sin(h1)
     poly = g1.find('paramPoly3')
     if poly != None:
-      bU, cU, dU, bV, cV, dV = dataGetter.getPoly3Params(poly)
+      bU, cU, dU, bV, cV, dV = xDataGetter.getPoly3Params(poly)
       u_, v_ = bU+cU+dU, bV+cV+dV
       x_ += u_*math.cos(h1)-v_*math.sin(h1)
       y_ += u_*math.sin(h1)+v_*math.cos(h1)
@@ -169,7 +169,7 @@ class editorFit(editor):
       poly = g.find('paramPoly3')
       if poly != None:
         while length > position:
-          dx, dy, dh = dataGetter.getPolyPosXYH(poly, position)
+          dx, dy, dh = xDataGetter.getPolyPosXYH(poly, position)
           xs.append(x+dx*math.cos(h)-dy*math.sin(h))
           ys.append(y+dx*math.sin(h)+dy*math.cos(h))
           hs.append((h+dh)%(2*math.pi))

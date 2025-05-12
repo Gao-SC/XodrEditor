@@ -5,6 +5,7 @@ import math
 from editor.editor import editor
 from xodrs.xodrParser import XParser
 from jsons.jsonParser import JParser
+from jsons.jsonDataGetter import jDataGetter
 
 from utils.definitions import *
 from utils.lambdas import *
@@ -86,7 +87,7 @@ class editorSlope(editor):
             elif move == defs.MOVE_HEAD:
               de = slope*s0
 
-            ord = JParser.getOrd(carInfo)
+            ord = jDataGetter.getOrd(carInfo)
             ord["position"]['y'] += de
             if ord.get("angle") != None:
               ord["angle"]["x"] += math.atan(slope)

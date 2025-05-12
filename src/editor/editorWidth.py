@@ -5,8 +5,9 @@ import math
 
 from editor.editor import editor
 from xodrs.xodrParser import XParser
-from xodrs.xodrDataGetter import dataGetter
 from jsons.jsonParser import JParser
+from xodrs.xodrDataGetter import xDataGetter
+from jsons.jsonDataGetter import jDataGetter
 
 from utils.definitions import *
 from utils.lambdas import *
@@ -80,12 +81,12 @@ class editorWidth(editor):
             for carInfo in infos:
               pos = carInfo["pos"]
               if pos >= s0 and pos < s1:
-                hdg = dataGetter.getPosHdg(road, pos)
+                hdg = xDataGetter.getPosHdg(road, pos)
                 ds = pos-s0
                 dw = delta[0]+delta[1]*ds+delta[2]*ds**2+delta[3]*ds**3
                 dw = dw if laneId != lid else dw/2
                 
-                ord = JParser.getOrd(carInfo)
+                ord = jDataGetter.getOrd(carInfo)
                 if int(lid) < 0:
                   ord["position"]['x'] += dw*math.sin(hdg)
                   ord["position"]['z'] -= dw*math.cos(hdg)

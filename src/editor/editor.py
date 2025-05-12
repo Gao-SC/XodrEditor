@@ -2,7 +2,8 @@ import math
 
 from utils.lambdas import *
 from jsons.jsonParser import JParser
-from xodrs.xodrDataGetter import dataGetter
+from xodrs.xodrDataGetter import xDataGetter
+from jsons.jsonDataGetter import jDataGetter
 
 class editor(object):
   def __init__(self):
@@ -43,7 +44,7 @@ class editor(object):
             hdg  = getData(gs[i], 'hdg')
             x, y = getData(gs[i], 'x'), getData(gs[i], 'y')
             poly = gs[i].find('paramPoly3')
-            bU, cU, dU, bV, cV, dV = dataGetter.getPoly3Params(poly)
+            bU, cU, dU, bV, cV, dV = xDataGetter.getPoly3Params(poly)
             t = carInfo["pos"]-s0
             u = bU*t+cU*t**2+dU*t**3
             v = bV*t+cV*t**2+dV*t**3
@@ -53,7 +54,7 @@ class editor(object):
 
             x += carInfo["dis"]*math.sin(hdg)
             y -= carInfo["dis"]*math.cos(hdg)
-            ord = JParser.getOrd(carInfo)
+            ord = jDataGetter.getOrd(carInfo)
             ord["position"]['x'] = x
             ord["position"]['z'] = y
             if ord.get("angle") != None:

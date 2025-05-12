@@ -25,7 +25,8 @@ class xodrParser:
     self.data.append(copy.deepcopy(new_val))
     if len(self.data) > 256:
       self.data.popleft()
-  def redoData(self):
+    self.root = self.data[-1].getroot()
+  def undo(self):
     if len(self.data) > 1:
       self.data.pop()
 
@@ -34,15 +35,16 @@ class xodrParser:
     print('Already saved.')
 
   def openXodr(self, name):
-    elementTree = None 
     try:
-      elementTree = ET.parse(path.readPath+name+".xodr")
-    except Exception:
-      print("File not found!")
+      data = ET.parse(path.readPath+name+".xodr")
+    except FileNotFoundError:
+      print("Error: File not found!")
+      return False
+    except ET.ParseError:
+      print("Error: Invalid XODR format!")
       return False
     self.clearAll()
-    self.addData(elementTree)
-    self.root = self.data[-1].getroot()
+    self.addData(data)
     self.updateData()
     return True
 
@@ -79,7 +81,6 @@ class xodrParser:
   def pushNewData(self):
     self.roads.clear()
     self.addData(self.data[-1])
-    self.root = self.data[-1].getroot()
     for road in self.root.iter('road'):
       id = road.get('id')
       self.roads[id] = road

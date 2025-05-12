@@ -102,4 +102,4 @@ class xodrDataGetter:
     h = math.atan2(bV+2*cV*t+3*dV*t**2, bU+2*cU*t+3*dU*t**2)
     return x, y, h
 
-dataGetter = xodrDataGetter()
+xDataGetter = xodrDataGetter()

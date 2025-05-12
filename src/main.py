@@ -3,7 +3,8 @@ import utils.path as path
 
 from xodrs.xodrParser 			import XParser
 from jsons.jsonParser 			import JParser
-from llm.llm 								import chater
+# from llm.llmXHXF 					import chater
+from llm.llmMaxKB 					import chater
 from script.script					import script
 from handler.handlerCurve 	import handlerC
 from handler.handlerFit 		import handlerF
@@ -69,7 +70,7 @@ if __name__ == '__main__':
 					break
 
 				case "undo":
-					XParser.redoData()
+					XParser.undo()
 					JParser.undo()
 
 				case "savename":

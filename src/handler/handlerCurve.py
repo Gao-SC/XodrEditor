@@ -4,7 +4,6 @@ from editor.editorFit import editorFit
 from xodrs.xodrParser import XParser
 from jsons.jsonParser import JParser
 from utils.random import *
-from error.errors import *
 
 class handlerCurve(handler):
   def __init__(self):
