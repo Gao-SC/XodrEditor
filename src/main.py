@@ -61,10 +61,6 @@ if __name__ == '__main__':
 					continue
 
 			match command[0]:
-				case "save":
-					XParser.writeXodr()
-					JParser.writeJson()
-
 				case "close":
 					plt.close()
 					break
@@ -75,28 +71,43 @@ if __name__ == '__main__':
 
 				case "savename":
 					path.editSaveName(command[1])
+					JParser.editSaveName(command[1])
 					print("Save name is now: ", path.saveName)
 
 				case "curve":
 					logger.write(handlerC.handle(command))
+					XParser.writeXodr()
+					JParser.writeJson()
 
 				case "fit":
 					logger.write(handlerF.handle(command))
+					XParser.writeXodr()
+					JParser.writeJson()
 
 				case "lane":
 					logger.write(handlerL.handle(command))
+					XParser.writeXodr()
+					JParser.writeJson()
 				
 				case "object":
 					logger.write(handlerO.handle(command))
+					XParser.writeXodr()
+					JParser.writeJson()
 
 				case "signal":
 					logger.write(handlerSi.handle(command))
+					XParser.writeXodr()
+					JParser.writeJson()
 		
 				case "slope":
 					logger.write(handlerSl.handle(command))
+					XParser.writeXodr()
+					JParser.writeJson()
 
 				case "width":
 					logger.write(handlerW.handle(command))
+					XParser.writeXodr()
+					JParser.writeJson()
 
 				case _:
 					print("Illegal command!")

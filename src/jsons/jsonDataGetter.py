@@ -8,7 +8,7 @@ class jsonDataGetter:
   def getOrd(self, carInfo):
     carId = carInfo["carId"]
     ordId = carInfo["ordId"]
-    car = JParser.jsonData[-1]["agents"][carId]
+    car = JParser.data[-1]["agents"][carId]
     if car['uid'] != "":
       if ordId == 0:
         return car['transform']

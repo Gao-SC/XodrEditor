@@ -13,15 +13,15 @@ from utils.lambdas import *
 
 class jsonParser:
   def __init__(self):
-    self.jsonData = deque()
+    self.data = deque()
     self.carPosition = deque()
     self.egoTs = []
     self.egoDs = []
 
   def addData(self, new_val):
-    self.jsonData.append(copy.deepcopy(new_val))
-    if len(self.jsonData) > 256:
-      self.jsonData.popleft()
+    self.data.append(copy.deepcopy(new_val))
+    if len(self.data) > 256:
+      self.data.popleft()
       
   def addCarData(self, new_val):
     self.carPosition.append(copy.deepcopy(new_val))
@@ -29,18 +29,18 @@ class jsonParser:
       self.carPosition.popleft()
 
   def undo(self):
-    if len(self.jsonData) > 1:
-      self.jsonData.pop()
+    if len(self.data) > 1:
+      self.data.pop()
       self.carPosition.pop()
 
   def clearAll(self):
-    self.jsonData.clear()
+    self.data.clear()
     self.carPosition.clear()
     self.egoTs.clear()
     self.egoDs.clear()
 
   def pushNewData(self):
-    self.addData(self.jsonData[-1])
+    self.addData(self.data[-1])
     self.addCarData(self.carPosition[-1])
 
   def readJson(self, name):
@@ -56,6 +56,7 @@ class jsonParser:
       return False
     self.clearAll()
     self.addData(jsonData)
+    self.rectifyJsonData()
     self.updateCarData()
     return True
 
@@ -67,7 +68,7 @@ class jsonParser:
       for lane in lanes:
         carInfos[id][lane.get('id')] = []
         
-    agents = self.jsonData[-1]["agents"]
+    agents = self.data[-1]["agents"]
     for i in range(len(agents)):
       tPos = agents[i]["transform"]["position"]
       tRot = agents[i]["transform"]["rotation"]
@@ -105,9 +106,25 @@ class jsonParser:
 
   def writeJson(self):
     with open(path.savePath+path.saveName+"_test.json", 'w') as file:
-      json.dump(self.jsonData[-1], file, indent=4)
+      json.dump(self.data[-1], file, indent=4)
       file.write('\n')
 
+  def rectifyJsonData(self):
+    agents = self.data[-1]["agents"]
+    index, length = 0, len(agents)
+    for i in range(length):
+      index = i
+      if agents[i]["uid"] != "":
+        agents[i]["initial_speed"] = 0
+      else:
+        break
+    for i in range(index, length):
+      agents.pop()
+
+  def editSaveName(self, saveName):
+    map = self.data[-1]["map"]
+    map["name"] = saveName
+    
   ## PRIVATE METHOD
   def findRoad(self, pos, rot):
     candidateRoads = []
