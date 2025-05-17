@@ -1,6 +1,6 @@
 import random
 
-from carDetector.carDetector import detector
+from scenePicker.scenePicker import sPicker
 
 def getRandomValue(string):
   valueList = string.split('_')
@@ -49,11 +49,11 @@ def getRandomId(id, lane=False):
       except Exception:
         pass
   
-      detector.setCandidates(ego, npc)
+      sPicker.setCandidates(ego, npc)
       if lane: 
-        rid, lid = detector.getRandomId2()
+        rid, lid = sPicker.getRandomId2()
         return rid, [lid]
-      return detector.getRandomId1()
+      return sPicker.getRandomId1()
     
     else:
       print("Invalid id! Choose default 0.")

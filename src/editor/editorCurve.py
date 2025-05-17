@@ -14,14 +14,14 @@ class editorCurve(editor):
 
   ## 拟合圆弧时, v0=v1=cos(theta/2)/(3*cos^2(theta/4))
   ## 参数含义见 readme
-  def edit(self, id, x0, y0, v0, h0, x1, y1, v1, h1, gi):
+  def edit(self, id, x0, y0, v0, h0, x1, y1, v1, h1, gi):  
     road = XParser.roads[id]
     planView = road.find('planView')
     gs = planView.findall('geometry')
     if gi >= len(gs):
       print("ERROR, out of range!")
       return
-    
+    g_x0, g_y0 = getData(gs[0], 'x'), getData(gs[0], 'y')
     params = []
     ## 计算道路方程
     lengthNew = 0
@@ -32,36 +32,40 @@ class editorCurve(editor):
     
     for i in range(len(gs)):
       bezier = self.getGBezier(gs[i])
-      judge = i == gi-1 and edit0 or i == gi or i == gi+1 and edit1
       deltaX, deltaY = 0, 0
-      if judge:
-        if i == gi-1 and edit0:
-          bezier[0] += x0*euc_dis
-          bezier[1] += y0*euc_dis
-          bezier[5] += h0
-        elif i == gi:
-          deltaX, deltaY = x0*euc_dis, y0*euc_dis
-          bezier[0] += (x1-x0)*euc_dis
-          bezier[1] += (y1-y0)*euc_dis
-          bezier[2] += v0*euc_dis
-          bezier[3] += v1*euc_dis
-          bezier[4] += h0
-          bezier[5] += h1
-        else:
-          deltaX, deltaY = x1*euc_dis, y1*euc_dis
-          bezier[0] -= x1*euc_dis
-          bezier[1] -= y1*euc_dis
-          bezier[4] += h1
+      edit = False
+
+      if i == gi-1 and edit0:
+        edit = True
+        bezier[0] += x0*euc_dis
+        bezier[1] += y0*euc_dis
+        bezier[5] += h0
+      elif i == gi:
+        edit = True
+        deltaX, deltaY = x0*euc_dis, y0*euc_dis
+        bezier[0] += (x1-x0)*euc_dis
+        bezier[1] += (y1-y0)*euc_dis
+        bezier[2] += v0*euc_dis
+        bezier[3] += v1*euc_dis
+        bezier[4] += h0
+        bezier[5] += h1
+      elif i == gi+1 and edit1:
+        edit = True
+        deltaX, deltaY = x1*euc_dis, y1*euc_dis
+        bezier[0] -= x1*euc_dis
+        bezier[1] -= y1*euc_dis
+        bezier[4] += h1
 
       x = getData(gs[i], 'x')+deltaX
       y = getData(gs[i], 'y')+deltaY
       param = xDataGetter.bezierToPoly3(bezier)
       l = xDataGetter.poly3ToLength(param, 1)
-      param.append(x-getData(gs[0], 'x'))
-      param.append(y-getData(gs[0], 'y'))
+      param.append(x-g_x0)
+      param.append(y-g_y0)
+      print(param)
       params.append(param)
       
-      if judge:
+      if edit:
         gs[i].clear()
         setData(gs[i], 's', lengthNew)
         setData(gs[i], 'x', x)

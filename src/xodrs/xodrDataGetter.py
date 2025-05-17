@@ -33,8 +33,8 @@ class xodrDataGetter:
 
   def getPosWidths(self, road, pos):
     l = getData(road, "length")
-    if pos < 0: pos = 0
-    if pos > l: pos = l
+    if pos <  0: pos = 0
+    if pos >= l: pos = l-1e-8
     
     lanes = road.find('lanes').findall('.//lane')
     lws, rws = [], []
@@ -67,8 +67,8 @@ class xodrDataGetter:
   
   def getPosHdg(self, road, pos):
     l = getData(road, "length")
-    if pos < 0: pos = 0
-    if pos > l: pos = l
+    if pos <  0: pos = 0
+    if pos >= l: pos = l-1e-8
 
     gs = road.find('planView').findall('geometry')
     for i in range(len(gs)):

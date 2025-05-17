@@ -1,13 +1,14 @@
 saveName = None
 
-readPath = ".\\data\\input\\"
+xodrPath = ".\\data\\OpenSCENARIO\\"
+jsonPath = ".\\data\\LGSVL-VSE\\"
 savePath = ".\\data\\output\\"
-scriptPath = ".\\script\\"
+scriptPath = ".\\data\\script\\"
 
 def editSaveName(newName):
   global saveName
   saveName = newName
 
 def editPATH(newPath):
-  global readPath
-  readPath = newPath
+  global xodrPath
+  xodrPath = newPath

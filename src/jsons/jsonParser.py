@@ -46,7 +46,7 @@ class jsonParser:
   def readJson(self, name):
     print("FINDING THE POSITION OF CARS...")
     try:
-      with open(path.readPath+name+".json", 'r') as file:
+      with open(path.jsonPath+name+".json", 'r') as file:
         jsonData = json.load(file)
     except FileNotFoundError:
       print("Error: File not found!")
@@ -137,7 +137,7 @@ class jsonParser:
       hdg = xDataGetter.getPosHdg(road, ansL)
       LHT = road.find('rule') == "LHT"
       if ans < 0 ^ LHT: hdg = (hdg+math.pi)%(2*math.pi)
-      carHdg = (rot['y']/180*math.pi)%(2*math.pi)
+      carHdg = ang2hdg(rot['y'])
       deltaHdg = min(2*math.pi-abs(hdg-carHdg), abs(hdg-carHdg))
     
       if ans <= 0: #道路左侧
@@ -191,6 +191,7 @@ class jsonParser:
         poly = g.find('paramPoly3')
         bU, cU, dU = getData(poly, 'bU'), getData(poly, 'cU'), getData(poly, 'dU')
         bV, cV, dV = getData(poly, 'bV'), getData(poly, 'cV'), getData(poly, 'dV')
+        length = getData(g, 'length')
         cosH, sinH = math.cos(h), math.sin(h)
 
         def compute_uv(t):
@@ -207,7 +208,7 @@ class jsonParser:
           dy_dt = du_dt*sinH + dv_dt*cosH
           return (x_t-tarX)*dx_dt + (y_t-tarY)*dy_dt
         
-        epsilon, N = 1e-4, 100
+        epsilon, N = 1e-4, math.ceil(length*20)
         roots = []
         t_values = np.linspace(0, 1, N+1)
         f_values = [F(t) for t in t_values]
@@ -232,16 +233,11 @@ class jsonParser:
             continue
         
         roots = np.unique(np.round(roots, 5))
-        
-        validRoots = [t for t in roots if -epsilon <= t <= 1+epsilon]
-        validRoots = np.clip(validRoots, 0, 1)
-        validRoots = np.unique(validRoots)
-        for tRoot in validRoots:
-          if t < 0: t = 0
-          if t > 1: t = 1
+        roots = np.clip(roots, 0, 1)
+        roots = np.unique(roots)
 
         dis, T = float('inf'), 0
-        for tRoot in validRoots:
+        for tRoot in roots:
           u, v, du_dt, dv_dt = compute_uv(tRoot)
           x_t = x + u*cosH - v*sinH
           y_t = y + u*sinH + v*cosH

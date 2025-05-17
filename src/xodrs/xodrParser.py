@@ -36,9 +36,9 @@ class xodrParser:
 
   def openXodr(self, name):
     try:
-      data = ET.parse(path.readPath+name+".xodr")
+      data = ET.parse(path.xodrPath+name+".xodr")
     except FileNotFoundError:
-      print("Error: File not found!")
+      print(f"Error: File not found: {path.xodrPath+name}.xodr")
       return False
     except ET.ParseError:
       print("Error: Invalid XODR format!")

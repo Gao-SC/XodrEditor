@@ -18,6 +18,7 @@ from logger.logger 					import Logger
 import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
+	logger = Logger()
 	commandList = []
 	plt.ion()
 
@@ -27,8 +28,14 @@ if __name__ == '__main__':
 			
 			if mode == 'S':
 				commandList = script.read()
+				if commandList == []:
+					print("ERROR: commandList is empty.")
+					continue
 			elif mode == 'L':
 				commandList = chater.translate()
+				if commandList == []:
+					print("ERROR: commandList is empty.")
+					continue
 			elif mode == 'E':
 				plt.ioff()
 				break
@@ -48,7 +55,6 @@ if __name__ == '__main__':
 			print("The json file is not exist.")
 
 		path.editSaveName(fileName)
-		logger = Logger()
 		logger.write(fileName)
 
 		while True:

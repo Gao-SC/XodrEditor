@@ -44,6 +44,8 @@ class handlerCurve(handler):
       gi = getRandomInt(lenGs)
       self.editorC.edit(id=id, gi=gi, x0=x0, y0=y0, h0=h0, v0=v0, x1=x1, y1=y1, h1=h1, v1=v1)
       return "fit"+returnString
+    
+    self.editorC.edit(id=id, gi=gi, x0=x0, y0=y0, h0=h0, v0=v0, x1=x1, y1=y1, h1=h1, v1=v1)
     return returnString
 
 handlerC = handlerCurve()

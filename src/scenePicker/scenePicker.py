@@ -8,7 +8,7 @@ from jsons.jsonParser import JParser
 from utils.lambdas import *
 
 import random
-class vehicleDetector:
+class scenePicker:
   def __init__(self):
     self.candidateRoads = []
     self.candidateLanes = []
@@ -29,7 +29,6 @@ class vehicleDetector:
 
       for cost, path in paths:
         for node in path:
-          id, lid = "", ""
           data = node.split('_')
           if data[0] == "start":
             egoT = JParser.egoTs[int(data[1])]
@@ -46,14 +45,10 @@ class vehicleDetector:
 
     if npc > 0: # 考虑npc车的途径点
       for id, roadInfo in JParser.carPosition[-1].items():
-        if not roadInfo:
-          continue
-        if id not in self.candidateRoads:
+        if roadInfo and id not in self.candidateRoads:
           self.candidateRoads.append(id)
         for lid, laneInfo in roadInfo.items():
-          if not laneInfo:
-            continue
-          if [id, lid]  not in self.candidateRoads:
+          if laneInfo and [id, lid] not in self.candidateRoads:
             self.candidateLanes.append([id, lid])
 
   def buildGRAPH(self):
@@ -85,11 +80,11 @@ class vehicleDetector:
           otherTailNode = f"road_{id}_lane_{otherLid}_0"
           otherHeadNode = f"road_{id}_lane_{otherLid}_1"
           if int(lid) < 0: # 右侧车道
-            graph[tailNode][otherTailNode] = abs(rws0[-int(lid)]-rws0[-int(otherLid)])
-            graph[headNode][otherHeadNode] = abs(rws1[-int(lid)]-rws1[-int(otherLid)])
+            graph[tailNode][otherTailNode] = abs(rws0[-int(lid)-1]-rws0[-int(otherLid)-1])
+            graph[headNode][otherHeadNode] = abs(rws1[-int(lid)-1]-rws1[-int(otherLid)-1])
           else:
-            graph[tailNode][otherTailNode] = abs(lws0[ int(lid)]-lws0[ int(otherLid)])
-            graph[headNode][otherHeadNode] = abs(lws1[ int(lid)]-lws1[ int(otherLid)])
+            graph[tailNode][otherTailNode] = abs(lws0[ int(lid)-1]-lws0[ int(otherLid)-1])
+            graph[headNode][otherHeadNode] = abs(lws1[ int(lid)-1]-lws1[ int(otherLid)-1])
       
     ## 道路连接
     for id, item in XParser.laneConnections.items():
@@ -181,4 +176,4 @@ class vehicleDetector:
     print("Randomly select: ", id, laneId)
     return id, laneId
 
-detector = vehicleDetector()
+sPicker = scenePicker()
