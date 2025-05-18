@@ -48,6 +48,7 @@ class editorWidth(editor):
     length = getData(road, 'length')
     # 选取所有sections (默认情况下, 道路将仅有一个laneSection).
     sections = road.find('lanes').findall('laneSection')
+    XParser.maxWidths[id] += value
     for section in sections:
       section = road.find('lanes').find('laneSection')
       S = getData(section, 's')

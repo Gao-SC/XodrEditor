@@ -50,8 +50,6 @@ class editorSlope(editor):
         self.setRoadSlope(newId, value, defs.MOVE_BOTH)
 
   def setRoadSlope(self, id, value, move):
-    print(id, value, move)
-    
     road = XParser.roads[id]
     elevations = road.find('elevationProfile').findall('elevation')
     elevaNum = len(elevations)

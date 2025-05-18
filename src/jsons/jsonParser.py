@@ -49,14 +49,14 @@ class jsonParser:
       with open(path.jsonPath+name+".json", 'r') as file:
         jsonData = json.load(file)
     except FileNotFoundError:
-      print("Error: File not found!")
+      print(f"Error: File not found: {path.jsonPath+name}.xodr")
       return False
     except json.JSONDecodeError:
       print("Error: Invalid JSON format!")
       return False
     self.clearAll()
     self.addData(jsonData)
-    self.rectifyJsonData()
+    # self.rectifyJsonData()
     self.updateCarData()
     return True
 
@@ -91,15 +91,16 @@ class jsonParser:
           carInfos[carT[0]][carT[1]].append({"carId": i, "ordId": 0, "pos": carT[2], "dis": carT[3]})
         else:
           print("Not found: ", i, " ", 0) 
-        wayPoints = agents[i]["waypoints"]
-        for j in range(len(wayPoints)):
-          pos = wayPoints[j]["position"]
-          rot = wayPoints[j]["angle"]
-          point = self.findRoad(pos, rot)
-          if point != None:
-            carInfos[point[0]][point[1]].append({"carId": i, "ordId": j+1, "pos": point[2], "dis": point[3]})
-          else:
-            print("Not found: ", i, " ", j+1)
+        if "waypoints" in agents[i]:
+          wayPoints = agents[i]["waypoints"]
+          for j in range(len(wayPoints)):
+            pos = wayPoints[j]["position"]
+            rot = wayPoints[j]["angle"]
+            point = self.findRoad(pos, rot)
+            if point != None:
+              carInfos[point[0]][point[1]].append({"carId": i, "ordId": j+1, "pos": point[2], "dis": point[3]})
+            else:
+              print("Not found: ", i, " ", j+1)
 
     print("FINDING ENDED.")
     self.addCarData(carInfos)
@@ -137,8 +138,11 @@ class jsonParser:
       hdg = xDataGetter.getPosHdg(road, ansL)
       LHT = road.find('rule') == "LHT"
       if ans < 0 ^ LHT: hdg = (hdg+math.pi)%(2*math.pi)
-      carHdg = ang2hdg(rot['y'])
-      deltaHdg = min(2*math.pi-abs(hdg-carHdg), abs(hdg-carHdg))
+      if 'y' in rot:
+        carHdg = ang2hdg(rot['y'])
+        deltaHdg = min(2*math.pi-abs(hdg-carHdg), abs(hdg-carHdg))
+      else:
+        deltaHdg = 0
     
       if ans <= 0: #道路左侧
         for i in range(len(lws)):
@@ -159,23 +163,23 @@ class jsonParser:
 
   def projectPoint(self, road, tarX, tarY):
     gs = road.find('planView').findall('geometry')
-    x0, y0 = getData(gs[0], 'x'), getData(gs[0], 'y')
     ans, ansL = float('inf'), 0
-    if math.hypot(x0-tarX, y0-tarY) > getData(road, 'length')*2:
-      return ans, ansL
-
+    maxWidth = XParser.maxWidths[road.get('id')]
+    
     for g in gs:
       h    = getData(g, 'hdg')
       x, y = getData(g, 'x'), getData(g, 'y')
       l    = getData(g, 'length')
       dis, pos = 0, 0
 
+      if math.hypot(x-tarX, y-tarY) > l+maxWidth:
+        continue
+
       if g.find('line') != None:
-        k, k_ = math.tan(h), -1/math.tan(h)
-        b, b_ = y-k*x, tarY-k_*tarX
-        dis = abs(k*tarX+b-tarY)/math.sqrt(k**2+1)
-        x_cross = (b_-b)/(k-k_)
-        pos = (x_cross-x)/math.cos(h)
+        a = math.cos(h)
+        b = math.sin(h)
+        dis = b*(tarX-x)-a*(tarY-y)
+        pos = a*(tarX-x)+b*(tarY-y)
 
         epsilon = 1e-2
         if  -epsilon < pos < 0:
@@ -184,9 +188,7 @@ class jsonParser:
           pos = l
         if pos < 0 or pos > l:
           continue
-        if math.cos(h)*(tarY-y) > math.sin(h)*(tarX-x):
-          dis *= -1
-        
+
       else:
         poly = g.find('paramPoly3')
         bU, cU, dU = getData(poly, 'bU'), getData(poly, 'cU'), getData(poly, 'dU')

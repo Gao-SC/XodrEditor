@@ -49,11 +49,11 @@ if __name__ == '__main__':
 		else:
 			fileName = input("Enter the xodr file path here: ")
 
+		logger.countTime()
 		if XParser.openXodr(fileName) == False:
 			continue
 		if JParser.readJson(fileName) == False:
-			print("The json file is not exist.")
-
+			continue
 		path.editSaveName(fileName)
 		logger.write(fileName)
 
@@ -81,39 +81,53 @@ if __name__ == '__main__':
 					print("Save name is now: ", path.saveName)
 
 				case "curve":
-					logger.write(handlerC.handle(command))
+					logger.countTime()
+					string = handlerC.handle(command)
 					XParser.writeXodr()
 					JParser.writeJson()
+					logger.write(string)
 
 				case "fit":
-					logger.write(handlerF.handle(command))
+					logger.countTime()
+					string = handlerF.handle(command)
 					XParser.writeXodr()
 					JParser.writeJson()
+					logger.write(string)
 
 				case "lane":
-					logger.write(handlerL.handle(command))
+					logger.countTime()
+					string = handlerL.handle(command)
 					XParser.writeXodr()
 					JParser.writeJson()
+					logger.write(string)
 				
 				case "object":
-					logger.write(handlerO.handle(command))
+					logger.countTime()
+					string = handlerO.handle(command)
 					XParser.writeXodr()
 					JParser.writeJson()
+					logger.write(string)
 
 				case "signal":
-					logger.write(handlerSi.handle(command))
+					logger.countTime()
+					string = handlerSi.handle(command)
 					XParser.writeXodr()
 					JParser.writeJson()
+					logger.write(string)
 		
 				case "slope":
-					logger.write(handlerSl.handle(command))
+					logger.countTime()
+					string = handlerSl.handle(command)
 					XParser.writeXodr()
 					JParser.writeJson()
+					logger.write(string)
 
 				case "width":
-					logger.write(handlerW.handle(command))
+					logger.countTime()
+					string = handlerW.handle(command)
 					XParser.writeXodr()
 					JParser.writeJson()
+					logger.write(string)
 
 				case _:
 					print("Illegal command!")

@@ -35,6 +35,6 @@ class handlerWidth(handler):
       print("Id not given!")
       return "Id not given!"
     self.editorW.edit(id=id, value=v, smooth=s, maxStep=ms, sameHdg=sh, laneIds=li)
-    return f"slope id={id} v={v} s={s} ms={ms} sh={sh} li={li}" 
+    return f"width id={id} v={v} s={s} ms={ms} sh={sh} li={li}" 
 
 handlerW = handlerWidth()

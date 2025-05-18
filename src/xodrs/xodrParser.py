@@ -20,6 +20,7 @@ class xodrParser:
     self.roadBackup = defaultdict(dict)
     self.laneBackup = defaultdict(dict)
     self.hdgs = defaultdict(dict)
+    self.maxWidths = defaultdict(dict)
 
   def addData(self, new_val):
     self.data.append(copy.deepcopy(new_val))
@@ -54,6 +55,7 @@ class xodrParser:
       id = road.get('id')
       self.roads[id] = road
       self.hdgUpdate(road.findall('.//geometry'), id)
+      self.widthUpdate(road)
 
       self.roadConnections[id] = [[], []]
       self.roadBackup[id] = defs.NOT_EDITED
@@ -107,6 +109,31 @@ class xodrParser:
     self.hdgs[id] = []
     self.hdgs[id].append(h0)
     self.hdgs[id].append(h1)
+
+  def widthUpdate(self, road):
+    id = road.get('id')
+    lanes = road.find('lanes').findall('.//lane')
+    lWidth, rWidth = 0, 0 
+    for lane in lanes:
+      lid = lane.get('id')
+      widths = lane.findall('width')
+      maxSingleWidth = 0
+
+      for i in range(len(widths)):
+        s0 = getData(widths[i], 'sOffset')
+        s1 = getData(road, 'length') if i == len(widths)-1 else getData(widths[i+1], 'sOffset')
+        w = widths[i]
+        a, b = getData(w, 'a'), getData(w, 'b')
+        c, d = getData(w, 'c'), getData(w, 'd')
+        upperLimit = s1-s0
+        singleWidth = findMaxCubic(a, b, c, d, upperLimit)
+        maxSingleWidth = max(singleWidth, maxSingleWidth)
+      
+      if int(lid) > 0:
+        lWidth += maxSingleWidth
+      elif int(lid) < 0:
+        rWidth += maxSingleWidth
+    self.maxWidths[id] = max(lWidth, rWidth)
 
   def roadUpdate(self, id, link, lanes, tmpJSets, dir):
     p_s = link.find('predecessor')

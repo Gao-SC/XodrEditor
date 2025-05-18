@@ -48,7 +48,7 @@ class scenePicker:
         if roadInfo and id not in self.candidateRoads:
           self.candidateRoads.append(id)
         for lid, laneInfo in roadInfo.items():
-          if laneInfo and [id, lid] not in self.candidateRoads:
+          if laneInfo and [id, lid] not in self.candidateLanes:
             self.candidateLanes.append([id, lid])
 
   def buildGRAPH(self):
@@ -89,7 +89,6 @@ class scenePicker:
     ## 道路连接
     for id, item in XParser.laneConnections.items():
       for lid, item_ in item.items():
-        #这里
         if int(lid) < 0 ^ LHT: # 右侧车道向前行驶
           node = f"road_{id}_lane_{lid}_1"
           for target in item_[1]:
@@ -133,7 +132,7 @@ class scenePicker:
         else:
           graph[f"end_{i}"][f"start_{i}"] = abs(egoT[2]-egoD[2])
 
-  def dijkstra(self, graph, start, end, k=3):
+  def dijkstra(self, graph, start, end, k):
     heap = []
     heapq.heappush(heap, (0, [start]))
     visited = defaultdict(int)
@@ -147,7 +146,7 @@ class scenePicker:
         paths.append((cost, path))
         continue
       
-      if visited[current_node] > k*2:
+      if visited[current_node] > k:
         continue
       visited[current_node] += 1
       
@@ -157,14 +156,9 @@ class scenePicker:
           new_path.append(neighbor)
           heapq.heappush(heap, (cost+weight, new_path))
     
-    # print(paths)
     if paths == []:
       return [(0, [start, end])]
-    
-    for i in range(len(paths)):
-      if i >= k or paths[i][0] > paths[0][0]*k:
-        return paths[:i]
-    return paths
+    return paths[:k]
 
   def getRandomId1(self):
     id = random.choice(self.candidateRoads)
