@@ -81,14 +81,14 @@ class jsonParser:
         if carT != None and carD != None:
           self.egoTs.append([carT[0], carT[1], len(carInfos[carT[0]][carT[1]])])
           self.egoDs.append([carD[0], carD[1], len(carInfos[carD[0]][carD[1]])])
-          carInfos[carT[0]][carT[1]].append({"carId": i, "ordId": 0, "pos": carT[2], "dis": carT[3]})
-          carInfos[carD[0]][carD[1]].append({"carId": i, "ordId": 1, "pos": carD[2], "dis": carD[3]})
+          carInfos[carT[0]][carT[1]].append({"carId": i, "ordId": 0, "pos": carT[2], "dis": carT[3], "dhdg": carT[4]})
+          carInfos[carD[0]][carD[1]].append({"carId": i, "ordId": 1, "pos": carD[2], "dis": carD[3], "dhdg": carD[4]})
         else:
           print("Ego not found: ", i)
 
       else:
         if carT != None:
-          carInfos[carT[0]][carT[1]].append({"carId": i, "ordId": 0, "pos": carT[2], "dis": carT[3]})
+          carInfos[carT[0]][carT[1]].append({"carId": i, "ordId": 0, "pos": carT[2], "dis": carT[3], "dhdg": carT[4]})
         else:
           print("Not found: ", i, " ", 0) 
         if "waypoints" in agents[i]:
@@ -98,7 +98,7 @@ class jsonParser:
             rot = wayPoints[j]["angle"]
             point = self.findRoad(pos, rot)
             if point != None:
-              carInfos[point[0]][point[1]].append({"carId": i, "ordId": j+1, "pos": point[2], "dis": point[3]})
+              carInfos[point[0]][point[1]].append({"carId": i, "ordId": j+1, "pos": point[2], "dis": point[3], "dhdg": point[4]})
             else:
               print("Not found: ", i, " ", j+1)
 
@@ -140,7 +140,8 @@ class jsonParser:
       if ans < 0 ^ LHT: hdg = (hdg+math.pi)%(2*math.pi)
       if 'y' in rot:
         carHdg = ang2hdg(rot['y'])
-        deltaHdg = min(2*math.pi-abs(hdg-carHdg), abs(hdg-carHdg))
+        deltaHdg = (carHdg-hdg)%(2*math.pi)
+        deltaHdg = deltaHdg if deltaHdg < math.pi else deltaHdg-2*math.pi
       else:
         deltaHdg = 0
     
@@ -156,7 +157,7 @@ class jsonParser:
             break
 
     if candidateRoads:
-      candidateRoads.sort(key=lambda x: abs(x[3])+x[4])
+      candidateRoads.sort(key=lambda x: abs(x[3])+abs(x[4]))
       return candidateRoads[0]
     else:
       return None

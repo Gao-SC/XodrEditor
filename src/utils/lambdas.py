@@ -3,8 +3,10 @@ import math
 getData = lambda a, b :float(a.get(b))
 setData = lambda a, b, c :a.set(b, str(c))
 
-hdg2ang = lambda h: (270-(h*180/math.pi))%360
-ang2hdg = lambda a: (math.pi/2-a*math.pi/180)%(math.pi*2)
+hdg2ang  = lambda h: (270-(h*180/math.pi))%360
+hdg2ang2 = lambda h: (h*180/math.pi)%360
+ang2hdg  = lambda a: (math.pi/2-a*math.pi/180)%(math.pi*2)
+ang2hdg2 = lambda a: (a*math.pi/180)%(math.pi*2)
 
 def findMaxCubic(a, b, c, d, upperLimit):
   candidates = [0.0, float(upperLimit)]

@@ -48,6 +48,7 @@ if __name__ == '__main__':
 			commandList.pop(0)
 		else:
 			fileName = input("Enter the xodr file path here: ")
+			fileName = fileName.lstrip("open ")
 
 		logger.countTime()
 		if XParser.openXodr(fileName) == False:

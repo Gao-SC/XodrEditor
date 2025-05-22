@@ -88,9 +88,9 @@ class editorSlope(editor):
             ord = jDataGetter.getOrd(carInfo)
             ord["position"]['y'] += de
             if ord.get("angle") != None:
-              ord["angle"]["x"] += hdg2ang(math.atan(slope))
+              ord["angle"]["x"] += hdg2ang2(math.atan(slope))
             else:
-              ord["rotation"]["x"] += hdg2ang(math.atan(slope))
+              ord["rotation"]["x"] += hdg2ang2(math.atan(slope))
 
   def lockChange(self, direction, id):
     for info in XParser.roadConnections[id][direction]:

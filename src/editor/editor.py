@@ -58,13 +58,7 @@ class editor(object):
             ord["position"]['x'] = x
             ord["position"]['z'] = y
             if ord.get("angle") != None:
-              if carInfo["dis"] > 0:
-                ord["angle"]["y"] =  hdg2ang(hdg)
-              else:
-                ord["angle"]["y"] = -hdg2ang(hdg)
+              ord["angle"]["y"] = carInfo["dhdg"]+hdg2ang(hdg)
             else:
-              if carInfo["dis"] > 0:
-                ord["rotation"]["y"] =  hdg2ang(hdg)
-              else:
-                ord["rotation"]["y"] = -hdg2ang(hdg)
+              ord["rotation"]["y"] = carInfo["dhdg"]+hdg2ang(hdg)
             break
