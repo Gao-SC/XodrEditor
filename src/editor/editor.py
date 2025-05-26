@@ -13,6 +13,7 @@ class editor(object):
     pass
 
   def rectifyRoadData(self, road, length_new):
+    id = road.get('id')
     length = getData(road, "length")
     setData(road, 'length', length_new)
     sections = road.find('lanes').findall('laneSection')
@@ -21,11 +22,30 @@ class editor(object):
     k_l = length_new/length
     for section in sections:
       setData(section, 's', getData(section, 's')*k_l)
-    for eleva in elevas:
+
+    elevaNum = len(elevas)
+    for i in range(elevaNum):
+      eleva = elevas[i]
+      s0 = getData(eleva, 's')
+      s1 = getData(road, "length") if i == elevaNum-1 else getData(elevas[i+1], "s")
+
+      # rectify the cars' position:
       setData(eleva, 's', getData(eleva, 's')*k_l)
       setData(eleva, 'b', getData(eleva, 'b')/k_l)
       setData(eleva, 'c', getData(eleva, 'c')/(k_l**2))
       setData(eleva, 'd', getData(eleva, 'd')/(k_l**3))
+      for infos in JParser.carPosition[-1][id].values():
+        for carInfo in infos:
+          pos = carInfo["pos"]
+          if pos >= s0 and pos < s1:
+            ord = jDataGetter.getOrd(carInfo)
+            if ord.get("angle") != None:
+              ord["angle"]["x"] /= k_l
+              ord["angle"]["z"] /= k_l
+            else:
+              ord["rotation"]["x"] /= k_l
+              ord["rotation"]["z"] /= k_l
+
     for width in widths:
       setData(width, 'sOffset', getData(width, 'sOffset')*k_l)
       setData(width, 'b', getData(width, 'b')/k_l)

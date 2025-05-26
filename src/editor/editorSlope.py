@@ -88,8 +88,8 @@ class editorSlope(editor):
             ord = jDataGetter.getOrd(carInfo)
             ord["position"]['y'] += de
 
-            dx = hdg2ang2(math.atan(slope))*math.cos(carInfo["dhdg"])
-            dz = hdg2ang2(math.atan(slope))*math.sin(carInfo["dhdg"])
+            dx = hdg2ang2(math.atan(slope)*math.cos(carInfo["dhdg"]))
+            dz = hdg2ang2(math.atan(slope)*math.sin(carInfo["dhdg"]))
             if ord.get("angle") != None:
               ord["angle"]["x"] += dx
               ord["angle"]["z"] += dz
