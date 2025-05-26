@@ -87,6 +87,7 @@ class editorSlope(editor):
 
             ord = jDataGetter.getOrd(carInfo)
             ord["position"]['y'] += de
+            print(slope)
             if ord.get("angle") != None:
               ord["angle"]["x"] += hdg2ang2(math.atan(slope))
             else:

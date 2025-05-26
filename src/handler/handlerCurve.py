@@ -21,7 +21,7 @@ class handlerCurve(handler):
     for i in range(1, len(command)):
       param = command[i].split('=')
       match param[0]:
-        case 'id': id = getRandomId(param[1])
+        case 'id': id = getRandomId(param[1], curve=True)
         case 'x0': x0 = getRandomValue(param[1])
         case 'y0': y0 = getRandomValue(param[1])
         case 'h0': h0 = getRandomValue(param[1])

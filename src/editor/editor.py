@@ -13,6 +13,7 @@ class editor(object):
     pass
 
   def rectifyRoadData(self, road, length_new):
+    print("here")
     length = getData(road, "length")
     setData(road, 'length', length_new)
     sections = road.find('lanes').findall('laneSection')
@@ -33,6 +34,7 @@ class editor(object):
       setData(width, 'd', getData(width, 'd')/(k_l**3))
 
     gs = road.find('planView').findall('geometry')
+    id = road.get('id')
     for infos in JParser.carPosition[-1][id].values():
       for carInfo in infos:
         carInfo["pos"] *= k_l
@@ -43,14 +45,18 @@ class editor(object):
           if carInfo["pos"] >= s0 and carInfo["pos"] < s1:
             hdg  = getData(gs[i], 'hdg')
             x, y = getData(gs[i], 'x'), getData(gs[i], 'y')
-            poly = gs[i].find('paramPoly3')
-            bU, cU, dU, bV, cV, dV = xDataGetter.getPoly3Params(poly)
-            t = carInfo["pos"]-s0
-            u = bU*t+cU*t**2+dU*t**3
-            v = bV*t+cV*t**2+dV*t**3
-            x += u*math.cos(hdg)-v*math.sin(hdg)
-            y += u*math.sin(hdg)+v*math.cos(hdg)
-            hdg += math.atan2(bV+2*cV*t+3*dV*t**2, bU+2*cU*t+3*dU*t**2)
+            s = carInfo["pos"]-s0
+
+            line = gs[i].find('line')
+            if line != None:
+              x += s*math.cos(hdg)
+              y += s*math.sin(hdg)
+            else:
+              poly = gs[i].find('paramPoly3')
+              u, v, h = xDataGetter.getPolyPosXYH(poly, s)      
+              x += u*math.cos(hdg)-v*math.sin(hdg)
+              y += u*math.sin(hdg)+v*math.cos(hdg)
+              hdg += h
 
             x += carInfo["dis"]*math.sin(hdg)
             y -= carInfo["dis"]*math.cos(hdg)
@@ -58,7 +64,7 @@ class editor(object):
             ord["position"]['x'] = x
             ord["position"]['z'] = y
             if ord.get("angle") != None:
-              ord["angle"]["y"] = carInfo["dhdg"]+hdg2ang(hdg)
+              ord["angle"]["y"] = hdg2ang(carInfo["dhdg"]+hdg)
             else:
-              ord["rotation"]["y"] = carInfo["dhdg"]+hdg2ang(hdg)
+              ord["rotation"]["y"] = hdg2ang(carInfo["dhdg"]+hdg)
             break

@@ -160,14 +160,20 @@ class scenePicker:
       return [(0, [start, end])]
     return paths[:k]
 
-  def getRandomId1(self):
-    id = random.choice(self.candidateRoads)
-    print("Randomly select: ", id)
-    return id
+  def getRandomId1(self, curve):
+    while True:
+      id = random.choice(self.candidateRoads)
+      gs = XParser.roads[id].find("planView").findall('geometry')
+      if curve == False or len(gs) > 1 or gs[0].find('line') == None:
+        print("Randomly select: ", id)
+        return id
 
-  def getRandomId2(self):
-    id, laneId = random.choice(self.candidateLanes)
-    print("Randomly select: ", id, laneId)
-    return id, laneId
+  def getRandomId2(self, curve):
+    while True:
+      id, laneId = random.choice(self.candidateLanes)
+      gs = XParser.roads[id].find("planView").findall('geometry')
+      if curve == False or len(gs) > 1 or gs[0].find('line') == None:
+        print("Randomly select: ", id, laneId)
+        return id, laneId
 
 sPicker = scenePicker()

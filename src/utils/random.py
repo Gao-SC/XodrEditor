@@ -32,7 +32,7 @@ def getRandomValue(string):
 def getRandomInt(num):
   return random.randrange(0, num)
 
-def getRandomId(id, lane=False):
+def getRandomId(id, lane=False, curve=False):
   ego, npc = 1, 0
   idList = id.split('_')
 
@@ -51,9 +51,9 @@ def getRandomId(id, lane=False):
   
       sPicker.setCandidates(ego, npc)
       if lane: 
-        rid, lid = sPicker.getRandomId2()
+        rid, lid = sPicker.getRandomId2(curve)
         return rid, [lid]
-      return sPicker.getRandomId1()
+      return sPicker.getRandomId1(curve)
     
     else:
       print("Invalid id! Choose default 0.")

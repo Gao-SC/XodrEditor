@@ -17,7 +17,7 @@ class handlerFit(handler):
     for i in range(1, len(command)):
       param = command[i].split('=')
       match param[0]:
-        case 'id': id = getRandomId(param[1])
+        case 'id': id = getRandomId(param[1], curve=True)
         case 'md': md = getRandomValue(param[1])
         case 'st': st = getRandomValue(param[1])
         case _: print("Illegal parameter!")
