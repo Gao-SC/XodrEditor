@@ -78,7 +78,6 @@ class xodrDataGetter:
       if s0 <= pos < s1:
         h0 = getData(gs[i], 'hdg')
         if gs[i].find('line') != None:
-          print("1: ", h0%(2*math.pi))
           return h0%(2*math.pi)
         
         poly = gs[i].find('paramPoly3')

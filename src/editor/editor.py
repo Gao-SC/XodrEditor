@@ -13,7 +13,6 @@ class editor(object):
     pass
 
   def rectifyRoadData(self, road, length_new):
-    print("here")
     length = getData(road, "length")
     setData(road, 'length', length_new)
     sections = road.find('lanes').findall('laneSection')

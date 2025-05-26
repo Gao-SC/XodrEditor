@@ -81,17 +81,21 @@ class editorSlope(editor):
           if pos >= s0 and pos < s1:
             de = value
             if move == defs.MOVE_TAIL:
-              de = slope*(s0-length)
+              de = slope*(pos-length)
             elif move == defs.MOVE_HEAD:
-              de = slope*s0
+              de = slope*pos
 
             ord = jDataGetter.getOrd(carInfo)
             ord["position"]['y'] += de
-            print(slope)
+
+            dx = hdg2ang2(math.atan(slope))*math.cos(carInfo["dhdg"])
+            dz = hdg2ang2(math.atan(slope))*math.sin(carInfo["dhdg"])
             if ord.get("angle") != None:
-              ord["angle"]["x"] += hdg2ang2(math.atan(slope))
+              ord["angle"]["x"] += dx
+              ord["angle"]["z"] += dz
             else:
-              ord["rotation"]["x"] += hdg2ang2(math.atan(slope))
+              ord["rotation"]["x"] += dx
+              ord["rotation"]["z"] += dz
 
   def lockChange(self, direction, id):
     for info in XParser.roadConnections[id][direction]:
