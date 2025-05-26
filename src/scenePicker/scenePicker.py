@@ -164,7 +164,12 @@ class scenePicker:
     while True:
       id = random.choice(self.candidateRoads)
       gs = XParser.roads[id].find("planView").findall('geometry')
-      if curve == False or len(gs) > 1 or gs[0].find('line') == None:
+      ok = False
+      for g in gs:
+        if g.find('line') == None:
+          ok = True
+          break
+      if curve == False or ok:
         print("Randomly select: ", id)
         return id
 
@@ -172,7 +177,12 @@ class scenePicker:
     while True:
       id, laneId = random.choice(self.candidateLanes)
       gs = XParser.roads[id].find("planView").findall('geometry')
-      if curve == False or len(gs) > 1 or gs[0].find('line') == None:
+      ok = False
+      for g in gs:
+        if g.find('line') == None:
+          ok = True
+          break
+      if curve == False or ok:
         print("Randomly select: ", id, laneId)
         return id, laneId
 

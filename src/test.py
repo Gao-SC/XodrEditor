@@ -1,4 +1,4 @@
-dir_path = ".\\log\\"
+'''dir_path = ".\\log\\"
 with open('.\\log\\test.log', 'r') as file:
   lines = file.readlines()
   answer = []
@@ -27,13 +27,10 @@ def pd_toExcel(data, fileName):  # pandas库储存数据到excel
     df.to_excel(fileName, index=False)
 
 fileName = ".\\data\\test.xlsx"
-pd_toExcel(answer, fileName)
+pd_toExcel(answer, fileName)'''
 
 
 
-
-'''
-import os
 import random
 import math
 
@@ -50,7 +47,7 @@ def generateRandomSlope():
   ms = random.randint(0,10)
   v = 0.1
   mv = random.choice(x)
-  command = f"slope id=random_1_0 ms={ms} v={v} ms={ms} mv={mv}\n"
+  command = f"slope id=random_1_1 ms={ms} v={v} ms={ms} mv={mv}\n"
   return command
 
 def generateRandomCurve():
@@ -60,7 +57,7 @@ def generateRandomCurve():
   if random.random() > 0.95:
     h0 = (1+random.random())*random.choice(A_B)*math.pi/10
     h1 = (1+random.random())*random.choice(A_B)*math.pi/10
-  command = f"curve id=random_1_0 v0={v0} v1={v1} h0={h0} h1={h1}\n"
+  command = f"curve id=random_1_1 v0={v0} v1={v1} h0={h0} h1={h1}\n"
   return command
 
 filenames = [
@@ -97,11 +94,12 @@ filenames = [
   "USA_Lanker-2_17_I-1-1"
 ]
 
-with open('.\\data\\script\\testCurve.odrScript', 'w', encoding='utf-8') as f:
+with open('.\\data\\script\\testSlope.odrScript', 'w', encoding='utf-8') as f:
   size = len(filenames)
   for i in range(size):
     f.write(f"{filenames[i]}\n")
-    f.write(generateRandomCurve())
+    f.write(f"savename slope{i}\n")
+    f.write(generateRandomSlope())
     f.write("close\n")
 
-print("OK")'''
+print("OK")
